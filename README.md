@@ -54,6 +54,31 @@ After stowing the `git` package, create `~/.config/git/config.local` with your i
 
 Git is non-fatal about missing includes, so commits without identity will fail with a clear `Please tell me who you are` — the local file is the fix.
 
+## Private data and `*.local` files
+
+Anything machine-specific or identity-bound — your name, email, GPG key ID, keychain helper commands, API tokens, work-only hostnames — should **not** be committed. The convention here is to layer those in via a sibling `*.local` file that the public config `[include]`s (or sources) at runtime.
+
+The `git` package is the working example:
+
+| File | Status | What's in it |
+| --- | --- | --- |
+| `git/.config/git/config` | Tracked, public | Settings safe to publish + a final `[include] path = ~/.config/git/config.local` |
+| `~/.config/git/config.local` | **Not tracked** (per-machine) | `[user]`, `[commit].gpgsign`, `[github].user`, etc. |
+
+Most config formats support some equivalent:
+
+| Tool | Layer-in mechanism |
+| --- | --- |
+| git | `[include] path = ~/.../something.local` |
+| ssh | `Include ~/.ssh/config.local` at the top of `~/.ssh/config` |
+| zsh | `[ -f ~/.zshrc.local ] && source ~/.zshrc.local` |
+| direnv `.envrc` | `source_env_if_exists .envrc.local` |
+| tmux | `source-file -q ~/.config/tmux/tmux.local.conf` |
+
+When you add a new package whose live config has private bits, **split the file**: keep the public scaffolding in the repo, `[include]` (or source) the `.local` companion, and document what goes in it in this README. The repo's `.gitignore` already ignores `*.local` defensively.
+
+**Verification pitfall**: when checking that a private value resolves correctly, use plain `git config <key>` — **not** `git config --global <key>`. The `--global` scope only reads the global config files directly and does **not** follow `[include]` directives, which produces a false negative.
+
 ## Adding a package
 
 1. Create the directory: `mkdir git`
