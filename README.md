@@ -22,7 +22,7 @@ A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the packag
 
 ```sh
 brew install stow
-git clone <url> ~/dotfiles
+git clone git@github.com:brindu/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 stow */
 ```
