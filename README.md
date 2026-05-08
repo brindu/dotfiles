@@ -8,7 +8,6 @@ Each top-level directory is a stow *package* whose internal structure mirrors `$
 
 ```
 dotfiles/
-├── Makefile
 ├── README.md
 ├── CLAUDE.md
 └── zsh/
@@ -17,34 +16,35 @@ dotfiles/
 
 A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the package is stowed.
 
+`stow` defaults `--target` to the parent of its working directory, so running it from inside `~/dotfiles` automatically targets `$HOME` — no flags needed.
+
 ## Setup on a new machine
 
 ```sh
 brew install stow
 git clone <url> ~/dotfiles
 cd ~/dotfiles
-make install
+stow */
 ```
 
-If a target file already exists in `$HOME`, stow refuses to overwrite. Either move it aside, or use `make adopt PKG=<package>` to pull it into the repo at the matching path.
+If a target file already exists in `$HOME`, stow refuses to overwrite. Either move it aside, or run `stow --adopt <package>` to pull it into the repo at the matching path.
 
 ## Adding a package
 
 1. Create the directory: `mkdir git`
 2. Place files at the path they should land in `$HOME` (e.g., `git/.gitconfig` → `~/.gitconfig`).
-3. `make install-git`
+3. `stow git`
 
 ## Commands
 
+Run from inside `~/dotfiles`:
+
 | Command | Purpose |
 | --- | --- |
-| `make install` | Symlink all packages |
-| `make uninstall` | Remove all symlinks |
-| `make restow` | Recreate all symlinks (run after adding files to a package) |
-| `make list` | Show discovered packages |
-| `make install-<pkg>` | Stow one package |
-| `make uninstall-<pkg>` | Unstow one package |
-| `make restow-<pkg>` | Restow one package |
-| `make adopt PKG=<pkg>` | Pull existing `$HOME` files into `<pkg>` |
+| `stow <pkg>` | Symlink one package |
+| `stow -D <pkg>` | Remove a package's symlinks |
+| `stow -R <pkg>` | Recreate symlinks (run after adding files to a package) |
+| `stow */` | Symlink every package |
+| `stow --adopt <pkg>` | Pull existing `$HOME` files into `<pkg>` |
 
 Editing a file inside a package edits the live config — symlinks are transparent. Restow is only needed when adding or removing files.
