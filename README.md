@@ -29,6 +29,14 @@ stow */
 
 If a target file already exists in `$HOME`, stow refuses to overwrite. Either move it aside, or run `stow --adopt <package>` to pull it into the repo at the matching path.
 
+After stowing the `tmux` package, install [TPM](https://github.com/tmux-plugins/tpm):
+
+```sh
+git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+```
+
+Then launch tmux and press `prefix + I` (`Ctrl-a I`) to install configured plugins.
+
 ## Adding a package
 
 1. Create the directory: `mkdir git`
