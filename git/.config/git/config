@@ -1,0 +1,47 @@
+[push]
+	default = upstream
+
+[color]
+	ui = true
+
+[pull]
+	rebase = true
+
+[diff]
+	algorithm = patience
+
+[core]
+	autocrlf = input
+	editor = vim
+	whitespace = -trailing-space,-indent-with-non-tab,-tab-in-indent
+
+[rebase]
+	autostash = true
+	required = true
+
+[alias]
+	aa = add --all
+	a = add
+	r = rebase
+	rc = rebase --continue
+	au = add -u
+	st = status
+	sw = switch
+	d = diff -w
+	br = branch
+	ca = commit --amend
+	ci = commit -v
+	fix = commit --amend --no-edit
+	bs = commit -m "Boyscout"
+	co = checkout
+	lg = log --pretty=format:'%C(bold)–%Creset %C(red bold)%h%d%Creset | %C(green)%an%Creset | %C(magenta)%cr%Creset | %C(cyan)%s%Creset'
+	lgr = log --pretty=format:'%s'
+	lgp = log -p
+	lgn = log --name-only
+	lgg = log --graph --decorate --oneline --all
+	wip = commit -m "WIP"
+	cancel = reset "HEAD^"
+	report-csv = "log --format='\"%cd\",\"%cn\",\"%s\"' --date=short --no-merges"
+
+[include]
+	path = ~/.config/git/config.local

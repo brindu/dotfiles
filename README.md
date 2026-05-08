@@ -37,6 +37,23 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 Then launch tmux and press `prefix + I` (`Ctrl-a I`) to install configured plugins.
 
+After stowing the `git` package, create `~/.config/git/config.local` with your identity. This file is intentionally **not** version-controlled — it holds the per-machine private bits that the public config `[include]`s:
+
+```ini
+[user]
+	name = Your Name
+	email = you@example.com
+	signingkey = ABCD1234           # optional, only if you GPG-sign commits
+
+[commit]
+	gpgsign = true                   # optional, requires signingkey above
+
+[github]
+	user = your-github-username      # optional, used by some tools
+```
+
+Git is non-fatal about missing includes, so commits without identity will fail with a clear `Please tell me who you are` — the local file is the fix.
+
 ## Adding a package
 
 1. Create the directory: `mkdir git`
