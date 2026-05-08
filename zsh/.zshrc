@@ -93,3 +93,6 @@ export SSL_CERT_FILE=/opt/homebrew/etc/ca-certificates/cert.pem
 # qlty
 export QLTY_INSTALL="$HOME/.qlty"
 export PATH="$QLTY_INSTALL/bin:$PATH"
+
+# workmux completions
+eval "$(workmux completions zsh)"
