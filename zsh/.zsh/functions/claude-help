@@ -1,0 +1,32 @@
+#!/bin/zsh
+# Quick Claude Code help function
+
+claude-help() {
+  echo "Claude Code Quick Reference:"
+  echo ""
+  echo "Basic Commands:"
+  echo "  claude                    # Start interactive mode"
+  echo "  claude -p 'message'       # Print mode (non-interactive)"
+  echo "  claude --continue         # Continue last conversation"
+  echo "  claude --resume           # Resume from conversation list"
+  echo ""
+  echo "In-session Commands:"
+  echo "  /help                     # Show help"
+  echo "  /clear                    # Clear conversation"
+  echo "  /exit                     # Exit Claude Code"
+  echo "  /cost                     # Show usage costs"
+  echo "  /mcp                      # Show MCP servers"
+  echo "  /export                   # Export conversation"
+  echo ""
+  echo "Shortcuts:"
+  echo "  c                         # alias for claude"
+  echo "  cc                        # alias for claude --continue"
+  echo "  cr                        # alias for claude --resume"
+  echo ""
+  echo "Tips:"
+  echo "  • Use Tab for file autocomplete"
+  echo "  • Use @ to mention files (e.g., @file.rb)"
+  echo "  • Paste images directly into prompts"
+  echo "  • Use '#' to add to memory"
+  echo "  • Say 'think' for planning mode"
+}
