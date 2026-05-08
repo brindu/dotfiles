@@ -98,3 +98,20 @@ Run from inside `~/dotfiles`:
 | `stow --adopt <pkg>` | Pull existing `$HOME` files into `<pkg>` |
 
 Editing a file inside a package edits the live config — symlinks are transparent. Restow is only needed when adding or removing files.
+
+## Tmux key bindings
+
+Prefix is `Ctrl-a` (rebound from default `Ctrl-b`). Bindings below are the custom or override ones — defaults like `n`/`p`/`1`–`9` for window navigation, `c` new window, `s` choose session, `d` detach, `z` zoom pane, `q` show pane numbers, etc., remain in effect.
+
+| Key | Action | Notes |
+| --- | --- | --- |
+| `Ctrl-a Ctrl-a` | Send literal `Ctrl-a` to the focused app | For apps that need it (e.g. emacs, zsh start-of-line) |
+| `Ctrl-a a` | Toggle to last (most recently focused) window | |
+| `Ctrl-a f` | Window picker (interactive tree with previews, type to filter) | Recovered from `Ctrl-a w`; replaces default `find-window` |
+| `Ctrl-a \|` | Split pane horizontally, inherit cwd of current pane | Replaces default `Ctrl-a "` |
+| `Ctrl-a -` | Split pane vertically, inherit cwd of current pane | Replaces default `Ctrl-a %` |
+| `Ctrl-a h` / `j` / `k` / `l` | Resize pane left / down / up / right by 5 cells | Overrides default vim-style pane navigation |
+| `Ctrl-a r` | Reload `~/.config/tmux/tmux.conf` in place | |
+| `Ctrl-a P` | Save current pane's scrollback to a file (prompts for path) | Useful before agent output scrolls off |
+| `Ctrl-a w` | Workmux dashboard in a 90% × 90% popup | Overrides default `choose-tree -Zw`; the picker now lives at `Ctrl-a f` |
+| `Ctrl-a e` | Toggle the workmux sidebar split | Persistent until toggled off |
