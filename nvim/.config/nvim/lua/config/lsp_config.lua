@@ -1,46 +1,55 @@
 require("mason").setup({})
 require("mason-lspconfig").setup({
-  ensure_installed = { "lua_ls", "solargraph" }
+  ensure_installed = { "lua_ls", "solargraph" },
 })
-
-local on_attach = function(client, bufnr)
-  vim.keymap.set('n', '<leader>ca', vim.lsp.buf.code_action, {})
-
-  -- Highlight symbol under cursor
-  if client.server_capabilities.documentHighlightProvider then
-    vim.cmd [[
-    hi! LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
-    hi! LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
-    hi! LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
-    ]]
-    vim.api.nvim_create_augroup('lsp_document_highlight', {
-      clear = false
-    })
-    vim.api.nvim_clear_autocmds({
-      buffer = bufnr,
-      group = 'lsp_document_highlight',
-    })
-    vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
-      group = 'lsp_document_highlight',
-      buffer = bufnr,
-      callback = vim.lsp.buf.document_highlight,
-    })
-    vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI' }, {
-      group = 'lsp_document_highlight',
-      buffer = bufnr,
-      callback = vim.lsp.buf.clear_references,
-    })
-  end
-end
 
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
-require("lspconfig").solargraph.setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
-}
+require("lspconfig").solargraph.setup({ capabilities = capabilities })
+require("lspconfig").lua_ls.setup({ capabilities = capabilities })
 
-require("lspconfig").lua_ls.setup {
-  on_attach = on_attach,
-  capabilities = capabilities,
-}
+vim.api.nvim_create_autocmd("LspAttach", {
+  group = vim.api.nvim_create_augroup("user-lsp-attach", { clear = true }),
+  callback = function(args)
+    local bufnr = args.buf
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    local opts = { buffer = bufnr, silent = true }
+    local builtin = require("telescope.builtin")
+
+    -- Navigation (Telescope pickers — overrides 0.11 grr/gri/grt defaults)
+    vim.keymap.set("n", "gd", builtin.lsp_definitions, opts)
+    vim.keymap.set("n", "gr", builtin.lsp_references, opts)
+    vim.keymap.set("n", "gi", builtin.lsp_implementations, opts)
+    vim.keymap.set("n", "gy", builtin.lsp_type_definitions, opts)
+
+    -- Refactoring
+    vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
+    vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
+    vim.keymap.set("n", "<leader>F", function()
+      vim.lsp.buf.format({ async = true })
+    end, opts)
+
+    -- Diagnostics (jump keys [d/]d are 0.11 defaults)
+    vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
+
+    -- Highlight symbol under cursor when supported
+    if client and client.server_capabilities.documentHighlightProvider then
+      vim.cmd([[
+        hi! LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
+        hi! LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
+        hi! LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
+      ]])
+      local hl_group = vim.api.nvim_create_augroup("user-lsp-highlight-" .. bufnr, { clear = true })
+      vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
+        group = hl_group,
+        buffer = bufnr,
+        callback = vim.lsp.buf.document_highlight,
+      })
+      vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+        group = hl_group,
+        buffer = bufnr,
+        callback = vim.lsp.buf.clear_references,
+      })
+    end
+  end,
+})
