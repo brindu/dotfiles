@@ -117,3 +117,154 @@ Prefix is `Ctrl-a` (rebound from default `Ctrl-b`). Bindings below are the custo
 | `Ctrl-a P` | Save current pane's scrollback to a file (prompts for path) | Useful before agent output scrolls off |
 | `Ctrl-a w` | Workmux dashboard in a 90% × 90% popup | Overrides default `choose-tree -Zw`; the picker now lives at `Ctrl-a f` |
 | `Ctrl-a e` | Toggle the workmux sidebar split | Persistent until toggled off |
+
+## Neovim
+
+The `nvim` package is a Lua-only nvim 0.11+ config built on [lazy.nvim](https://github.com/folke/lazy.nvim). Layout:
+
+```
+nvim/.config/nvim/
+├── init.lua                # loads each `config/*.lua` in order
+├── .luarc.json             # tells lua_ls about the `vim` global
+├── lazy-lock.json          # plugin commit pins (tracked)
+└── lua/
+    ├── config/             # imperative setup
+    │   ├── options.lua     # vim.opt + autocmds (trim whitespace, Lazy cursorline)
+    │   ├── mappings.lua    # general (non-LSP, non-plugin) keymaps
+    │   ├── lazy.lua        # bootstrap lazy.nvim and load plugins/
+    │   ├── lsp_config.lua  # mason + vim.lsp.config + LspAttach autocmd
+    │   └── completion.lua  # nvim-cmp setup
+    └── plugins/            # one file per plugin or domain; lazy auto-loads each
+```
+
+### Plugins
+
+| Plugin | Purpose |
+| --- | --- |
+| **lazy.nvim** | Plugin manager |
+| **kanagawa.nvim** | Colorscheme (`kanagawa-dragon` variant) |
+| **lualine.nvim** | Statusline |
+| **nvim-tree.lua** + nvim-web-devicons | Sidebar file tree |
+| **telescope.nvim** + plenary.nvim | Fuzzy finder for files, grep, LSP results |
+| **nvim-treesitter** + treesitter-endwise + ts-autotag | Syntax / indent / autoclose HTML and JSX tags |
+| **mason.nvim** + mason-lspconfig + nvim-lspconfig | LSP server install + bridging |
+| **nvim-cmp** + cmp-{buffer,path,nvim-lsp} + cmp_luasnip | Completion engine + sources |
+| **LuaSnip** + friendly-snippets | Snippet engine + library |
+| **vim-fugitive** | Git porcelain (`:G`, `:Git blame`, etc.) |
+| **gitsigns.nvim** | Gutter signs for hunks + inline blame |
+| **diffview.nvim** | Side-by-side diff and per-file history views |
+| **neotest** + neotest-rspec + nvim-nio | Test runner UI for RSpec |
+| **vim-rails** | Rails-aware navigation (`:Rmodel`, `:Rcontroller`, `:A`, etc.) |
+| **nvim-surround** | Surround pairs (`ys`, `cs`, `ds`) |
+| **vim-easy-align** | Column alignment by delimiter (`ga…`) |
+| **rename.vim** | `:Rename newname.ext` for current file |
+
+### Keybindings
+
+Leader is `<Space>`. Tables below cover custom bindings; nvim 0.11 LSP defaults (`K`, `<C-S>`, `[d`/`]d`, `gO`, `gra`, `grn`, `grr`, `gri`, `grt`) are still available where not overridden.
+
+#### General
+
+| Mode | Key | Action |
+| --- | --- | --- |
+| n | `<C-h/j/k/l>` | Move between splits |
+| n | `<S-h>` / `<S-l>` | Previous / next buffer |
+| n | `<leader>[` / `<leader>]` | Resize current split height +2 / -2 |
+| n | `<leader>-` / `<leader>=` | Resize current split width +2 / -2 |
+| v | `<` / `>` | Indent left/right (re-selects range) |
+| v | `<leader>,` / `<leader>.` | Move selection down / up one line |
+| v | `p` | Paste without yanking the replaced text |
+
+#### LSP (active when a server attaches)
+
+| Key | Action |
+| --- | --- |
+| `gd` | Definitions (Telescope picker) |
+| `gr` | References (Telescope) |
+| `gi` | Implementations (Telescope) |
+| `gy` | Type definitions (Telescope) |
+| `<leader>rn` | Rename symbol |
+| `<leader>ca` (n, v) | Code action |
+| `<leader>F` | Format buffer (async) |
+| `<leader>e` | Open diagnostic float for current line |
+
+#### Telescope
+
+| Key | Action |
+| --- | --- |
+| `<leader>ff` | Find files |
+| `<leader>fg` | Live grep |
+| `<leader>fb` | Open buffers |
+| `<leader>fh` | Help tags |
+
+Inside the picker: `<C-j>`/`<C-k>` move, `<CR>` open, `<C-x>`/`<C-v>`/`<C-t>` open in split / vsplit / tab, `<Esc>` close.
+
+#### Git
+
+| Key | Action |
+| --- | --- |
+| `<leader>gp` | Preview hunk under cursor (gitsigns) |
+| `<leader>gtb` | Toggle inline blame |
+| `<leader>gd` | Diffview vs HEAD |
+| `<leader>gm` | Diffview vs `origin/main` |
+| `<leader>gh` | Diffview file history (current file) |
+
+Plus all of vim-fugitive: `:G`, `:Git blame`, `:Git log`, etc.
+
+#### File tree
+
+| Key | Action |
+| --- | --- |
+| `<C-n>` | Toggle nvim-tree |
+| `<C-t>` | Reveal current file in tree |
+
+Inside the tree: `<CR>` open, `a` create, `d` delete, `r` rename, `R` refresh, `H` toggle hidden.
+
+#### Tests (Neotest)
+
+| Key | Action |
+| --- | --- |
+| `<leader>tn` | Run nearest test |
+| `<leader>tf` | Run current test file |
+| `<leader>tl` | Run last |
+| `<leader>ts` | Toggle summary panel |
+| `<leader>to` | Open output for last run |
+
+#### Surround / align
+
+| Mode | Sequence | Action |
+| --- | --- | --- |
+| n | `ys{motion}{char}` | Surround `motion` with `char` (e.g. `ysiw)` → `(word)`) |
+| n | `cs{old}{new}` | Change surround (`cs"'` → swap quotes) |
+| n | `ds{char}` | Delete surrounding `char` |
+| v | `S{char}` | Surround selection |
+| n / v | `ga{motion}{delim}` | Align around `delim` (e.g. `gaip=` aligns paragraph by `=`) |
+
+### Maintenance
+
+| Task | Command |
+| --- | --- |
+| Plugin UI / status | `:Lazy` |
+| Update all plugins (then commit `lazy-lock.json`) | `:Lazy update` |
+| Reset to lock file | `:Lazy restore` |
+| Remove orphaned plugins | `:Lazy clean` |
+| LSP server installer UI | `:Mason` |
+| Reinstall an LSP server | `:MasonUninstall <name>` then `:MasonInstall <name>` |
+| LSP health | `:checkhealth lsp` |
+| Update treesitter parsers | `:TSUpdate` |
+| Install a parser by name | `:TSInstallSync <lang>` |
+| Treesitter health | `:checkhealth nvim-treesitter` |
+| Overall health | `:checkhealth` |
+
+#### Adding things
+
+- **A plugin** — drop a new file in `nvim/.config/nvim/lua/plugins/<name>.lua` returning a lazy.nvim spec, run `stow -R nvim` to symlink it, open nvim → Lazy auto-installs and bumps `lazy-lock.json`.
+- **An LSP server** — append to `ensure_installed` in `nvim/.config/nvim/lua/plugins/lsp.lua`. Restart nvim → mason fetches it. Per-server overrides go through `vim.lsp.config("server_name", { … })` in `lua/config/lsp_config.lua`.
+- **A treesitter parser** — append to `ensure_installed` in `nvim/.config/nvim/lua/plugins/tree_sitter.lua`. Restart, or `:TSInstallSync <lang>` immediately.
+
+#### Gotchas
+
+- **`ruby-lsp` + frozen Gemfile** — ruby-lsp wants to write `.ruby-lsp/Gemfile.lock`, which Bundler refuses in frozen mode. Either add `ruby-lsp`/`ruby-lsp-rails`/`debug` to the project Gemfile (preferred — team-wide), or per-machine: `mkdir -p <project>/.ruby-lsp/.bundle && printf -- '---\nBUNDLE_FROZEN: "false"\n' > <project>/.ruby-lsp/.bundle/config`.
+- **Mason gems with stale interpreter paths** — Mason captures the Ruby/Node binary in the gem shebang at install time. After switching mise versions, reinstall affected packages from a shell where `which ruby`/`which node` resolves correctly.
+- **Markdown treesitter is intentionally skipped** (`ignore_install` + `disable` in `tree_sitter.lua`) because upstream query files reference grammar nodes the parser doesn't expose. Revisit if a future release fixes it.
+- **First nvim launch on a new machine** — accept the lazy-bootstrap prompt, wait for plugins to install. `:Mason` to confirm `lua-language-server` and `ruby-lsp` are installed (the `ensure_installed` list will trigger them automatically on first run for the matching filetype). `:TSUpdate` once if treesitter health complains.
