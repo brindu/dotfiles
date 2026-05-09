@@ -23,9 +23,13 @@ return {
       -- Install parsers synchronously (only applied to `ensure_installed`)
       sync_install = false,
       auto_install = true,
+      -- Skip markdown: upstream query files reference grammar nodes the
+      -- shipped parser doesn't have, which breaks any buffer that hits
+      -- the highlighter (incl. :checkhealth, :TSUpdate UI).
+      ignore_install = { "markdown", "markdown_inline" },
       highlight = {
         enable = true,
-        disable = { "markdown" },
+        disable = { "markdown", "markdown_inline" },
       },
       endwise = {
         enable = true,
