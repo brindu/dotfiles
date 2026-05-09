@@ -1,12 +1,14 @@
-require("mason").setup({})
-require("mason-lspconfig").setup({
-  ensure_installed = { "lua_ls", "solargraph" },
-})
+require("mason").setup()
 
+-- Apply cmp completion capabilities to every LSP server. mason-lspconfig's
+-- automatic_enable will call vim.lsp.enable() for each installed server,
+-- which picks up this shared config.
 local capabilities = require("cmp_nvim_lsp").default_capabilities()
+vim.lsp.config("*", { capabilities = capabilities })
 
-require("lspconfig").solargraph.setup({ capabilities = capabilities })
-require("lspconfig").lua_ls.setup({ capabilities = capabilities })
+require("mason-lspconfig").setup({
+  ensure_installed = { "lua_ls", "ruby_lsp" },
+})
 
 vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("user-lsp-attach", { clear = true }),
