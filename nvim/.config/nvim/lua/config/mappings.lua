@@ -17,9 +17,7 @@ vim.keymap.set("n", "<leader>]", ":resize -2<CR>", opts)
 vim.keymap.set("n", "<leader>=", ":vertical resize -2<CR>", opts)
 vim.keymap.set("n", "<leader>-", ":vertical resize +2<CR>", opts)
 
--- Buffer navigation
-vim.keymap.set("n", "<S-l>", ":bnext<CR>", opts)
-vim.keymap.set("n", "<S-h>", ":bprevious<CR>", opts)
+-- Buffer navigation: <S-h>/<S-l> are owned by bufferline.nvim (BufferLineCyclePrev/Next)
 
 -- Visual: stay in indent mode after shifting
 vim.keymap.set("v", "<", "<gv", opts)

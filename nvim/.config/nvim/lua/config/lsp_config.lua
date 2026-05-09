@@ -36,11 +36,8 @@ vim.api.nvim_create_autocmd("LspAttach", {
     -- args.data or absent client can't strand the keymaps above.
     local client = args.data and vim.lsp.get_client_by_id(args.data.client_id)
     if client and client.server_capabilities.documentHighlightProvider then
-      vim.cmd([[
-        hi! LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
-        hi! LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
-        hi! LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
-      ]])
+      -- Use the colorscheme's LspReference{Text,Read,Write} highlights (tokyonight
+      -- provides subtle dark-tinted backgrounds that fit the palette).
       local hl_group = vim.api.nvim_create_augroup("user-lsp-highlight-" .. bufnr, { clear = true })
       vim.api.nvim_create_autocmd({ "CursorHold", "CursorHoldI" }, {
         group = hl_group,

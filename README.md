@@ -142,8 +142,10 @@ nvim/.config/nvim/
 | Plugin | Purpose |
 | --- | --- |
 | **lazy.nvim** | Plugin manager |
-| **kanagawa.nvim** | Colorscheme (`kanagawa-dragon` variant) |
-| **lualine.nvim** | Statusline |
+| **tokyonight.nvim** | Colorscheme — `storm` style by default (variants: `night`, `moon`, `day`) |
+| **lualine.nvim** | Statusline (auto-detects active colorscheme) |
+| **bufferline.nvim** | Tabbed buffer line at the top (`<S-h>`/`<S-l>` to cycle) |
+| **dropbar.nvim** | LSP-aware breadcrumb winbar above each split |
 | **nvim-tree.lua** + nvim-web-devicons | Sidebar file tree |
 | **telescope.nvim** + plenary.nvim | Fuzzy finder for files, grep, LSP results |
 | **nvim-treesitter** + treesitter-endwise + ts-autotag | Syntax / indent / autoclose HTML and JSX tags |
@@ -180,7 +182,11 @@ Leader is `<Space>`. Tables below cover custom bindings; nvim 0.11 LSP defaults 
 | Mode | Key | Action |
 | --- | --- | --- |
 | n | `<C-h/j/k/l>` | Move between splits |
-| n | `<S-h>` / `<S-l>` | Previous / next buffer |
+| n | `<S-h>` / `<S-l>` | Previous / next buffer (bufferline cycle order) |
+| n | `<leader>bp` | Bufferline: pick a buffer by label |
+| n | `<leader>bc` | Bufferline: pick a buffer and close it |
+| n | `<leader>bo` | Bufferline: close all other buffers |
+| n | `<leader>;` | Dropbar: pick a winbar breadcrumb segment |
 | n | `<leader>[` / `<leader>]` | Resize current split height +2 / -2 |
 | n | `<leader>-` / `<leader>=` | Resize current split width +2 / -2 |
 | v | `<` / `>` | Indent left/right (re-selects range) |
