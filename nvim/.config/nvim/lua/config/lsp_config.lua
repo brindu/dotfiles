@@ -26,9 +26,8 @@ vim.api.nvim_create_autocmd("LspAttach", {
     -- Refactoring
     vim.keymap.set("n", "<leader>rn", vim.lsp.buf.rename, opts)
     vim.keymap.set({ "n", "v" }, "<leader>ca", vim.lsp.buf.code_action, opts)
-    vim.keymap.set("n", "<leader>F", function()
-      vim.lsp.buf.format({ async = true })
-    end, opts)
+    -- <leader>F is owned by conform.nvim; its lsp_fallback keeps LSP formatting
+    -- as the fallback for filetypes with no configured conform formatter
 
     -- Diagnostics (jump keys [d/]d are 0.11 defaults)
     vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)

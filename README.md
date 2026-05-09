@@ -158,6 +158,18 @@ nvim/.config/nvim/
 | **nvim-surround** | Surround pairs (`ys`, `cs`, `ds`) |
 | **vim-easy-align** | Column alignment by delimiter (`ga…`) |
 | **rename.vim** | `:Rename newname.ext` for current file |
+| **which-key.nvim** | Popup showing pending keymaps after `<leader>` |
+| **nvim-autopairs** | Auto-close brackets/quotes; cmp-aware (adds `()` on function completion) |
+| **todo-comments.nvim** | Highlight `TODO`/`FIXME`/`HACK` + `:TodoTelescope` |
+| **indent-blankline.nvim** | Indent guides (no scope highlight) |
+| **fidget.nvim** | LSP progress spinner |
+| **flash.nvim** | 2-key jump motion (`s`, `S`) |
+| **harpoon** (harpoon2) | Pin a handful of files for instant switching |
+| **trouble.nvim** | Panel for diagnostics, LSP refs, quickfix |
+| **conform.nvim** | Formatter runner (stylua, RuboCop, Prettier, shfmt); owns `<leader>F` with LSP fallback |
+| **nvim-lint** | Linter runner (RuboCop on Ruby; runs on save / read / insert leave) |
+| **oil.nvim** | Edit a directory as a buffer (rename = `:w`); `-` opens parent dir |
+| **nvim-dap** + nvim-dap-ui + nvim-nio | Debug adapter UI (adapters wired per-language as needed) |
 
 ### Keybindings
 
@@ -174,6 +186,9 @@ Leader is `<Space>`. Tables below cover custom bindings; nvim 0.11 LSP defaults 
 | v | `<` / `>` | Indent left/right (re-selects range) |
 | v | `<leader>,` / `<leader>.` | Move selection down / up one line |
 | v | `p` | Paste without yanking the replaced text |
+| n / x / o | `s` | Flash jump (overrides default `s` / `cl`) |
+| n / x / o | `S` | Flash treesitter jump |
+| n | `<leader>?` | which-key: show buffer-local keymaps |
 
 #### LSP (active when a server attaches)
 
@@ -185,7 +200,7 @@ Leader is `<Space>`. Tables below cover custom bindings; nvim 0.11 LSP defaults 
 | `gy` | Type definitions (Telescope) |
 | `<leader>rn` | Rename symbol |
 | `<leader>ca` (n, v) | Code action |
-| `<leader>F` | Format buffer (async) |
+| `<leader>F` | Format buffer (conform.nvim; falls back to `vim.lsp.buf.format` for filetypes with no configured formatter) |
 | `<leader>e` | Open diagnostic float for current line |
 
 #### Telescope
@@ -217,8 +232,11 @@ Plus all of vim-fugitive: `:G`, `:Git blame`, `:Git log`, etc.
 | --- | --- |
 | `<C-n>` | Toggle nvim-tree |
 | `<C-t>` | Reveal current file in tree |
+| `-` | Open parent directory in oil (edit-as-buffer) |
 
 Inside the tree: `<CR>` open, `a` create, `d` delete, `r` rename, `R` refresh, `H` toggle hidden.
+
+Inside oil: `<CR>` enter, `-` go up, `<C-s>` open in vsplit, edit names freely and `:w` to apply.
 
 #### Tests (Neotest)
 
@@ -229,6 +247,46 @@ Inside the tree: `<CR>` open, `a` create, `d` delete, `r` rename, `R` refresh, `
 | `<leader>tl` | Run last |
 | `<leader>ts` | Toggle summary panel |
 | `<leader>to` | Open output for last run |
+
+#### Harpoon
+
+| Key | Action |
+| --- | --- |
+| `<leader>ha` | Add current file to harpoon list |
+| `<leader>hh` | Toggle harpoon quick menu |
+| `<leader>1`–`<leader>5` | Jump to harpooned file 1–5 |
+
+#### Diagnostics / refs (Trouble)
+
+| Key | Action |
+| --- | --- |
+| `<leader>xx` | Workspace diagnostics |
+| `<leader>xX` | Buffer diagnostics |
+| `<leader>xs` | Document symbols |
+| `<leader>xl` | LSP defs/refs panel (right) |
+| `<leader>xq` | Quickfix list |
+| `<leader>xL` | Location list |
+
+#### TODO comments
+
+| Key | Action |
+| --- | --- |
+| `<leader>ft` | Telescope picker for `TODO`/`FIXME`/etc. |
+| `]t` / `[t` | Next / previous todo comment |
+
+#### Debug (DAP)
+
+Adapters/configurations are language-specific and not pre-wired — install the adapter (e.g. `mason.nvim` → `debugpy`, `js-debug-adapter`) and add a `dap.configurations.<ft>` entry as needed.
+
+| Key | Action |
+| --- | --- |
+| `<leader>db` | Toggle breakpoint |
+| `<leader>dc` | Continue |
+| `<leader>di` | Step into |
+| `<leader>do` | Step over |
+| `<leader>du` | Step out |
+| `<leader>dr` | Open REPL |
+| `<leader>dt` | Toggle dap-ui |
 
 #### Surround / align
 
