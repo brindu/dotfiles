@@ -14,7 +14,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
   group = vim.api.nvim_create_augroup("user-lsp-attach", { clear = true }),
   callback = function(args)
     local bufnr = args.buf
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
     local opts = { buffer = bufnr, silent = true }
     local builtin = require("telescope.builtin")
 
@@ -34,7 +33,9 @@ vim.api.nvim_create_autocmd("LspAttach", {
     -- Diagnostics (jump keys [d/]d are 0.11 defaults)
     vim.keymap.set("n", "<leader>e", vim.diagnostic.open_float, opts)
 
-    -- Highlight symbol under cursor when supported
+    -- Highlight symbol under cursor when supported. Done last so a missing
+    -- args.data or absent client can't strand the keymaps above.
+    local client = args.data and vim.lsp.get_client_by_id(args.data.client_id)
     if client and client.server_capabilities.documentHighlightProvider then
       vim.cmd([[
         hi! LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
