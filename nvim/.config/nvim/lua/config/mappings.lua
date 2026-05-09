@@ -1,44 +1,31 @@
-local opts = { noremap = true, silent = true }
-local term_opts = { silent = true }
+local opts = { silent = true }
 
--- Shorten function name
-local keymap = vim.api.nvim_set_keymap
-
---Remap space as leader key
-keymap("", "<Space>", "<Nop>", opts)
+-- Remap space as leader
+vim.keymap.set("", "<Space>", "<Nop>", opts)
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
--- Modes
---   normal_mode = "n",
---   insert_mode = "i",
---   visual_mode = "v",
---   visual_block_mode = "x",
---   term_mode = "t",
---   command_mode = "c",
+-- Easy split navigation
+vim.keymap.set("n", "<C-h>", "<C-w>h", opts)
+vim.keymap.set("n", "<C-j>", "<C-w>j", opts)
+vim.keymap.set("n", "<C-k>", "<C-w>k", opts)
+vim.keymap.set("n", "<C-l>", "<C-w>l", opts)
 
--- Easy navigation
-keymap('n', '<C-h>', '<C-w>h', opts)
-keymap('n', '<C-j>', '<C-w>j', opts)
-keymap('n', '<C-k>', '<C-w>k', opts)
-keymap('n', '<C-l>', '<C-w>l', opts)
+-- Resize splits
+vim.keymap.set("n", "<leader>[", ":resize +2<CR>", opts)
+vim.keymap.set("n", "<leader>]", ":resize -2<CR>", opts)
+vim.keymap.set("n", "<leader>=", ":vertical resize -2<CR>", opts)
+vim.keymap.set("n", "<leader>-", ":vertical resize +2<CR>", opts)
 
--- Resize with arrows
-keymap("n", "<leader>[", ":resize +2<CR>", opts)
-keymap("n", "<leader>]", ":resize -2<CR>", opts)
-keymap("n", "<leader>=", ":vertical resize -2<CR>", opts)
-keymap("n", "<leader>-", ":vertical resize +2<CR>", opts)
+-- Buffer navigation
+vim.keymap.set("n", "<S-l>", ":bnext<CR>", opts)
+vim.keymap.set("n", "<S-h>", ":bprevious<CR>", opts)
 
--- Navigate buffers
-keymap("n", "<S-l>", ":bnext<CR>", opts)
-keymap("n", "<S-h>", ":bprevious<CR>", opts)
+-- Visual: stay in indent mode after shifting
+vim.keymap.set("v", "<", "<gv", opts)
+vim.keymap.set("v", ">", ">gv", opts)
 
--- Visual --
--- Stay in indent mode
-keymap("v", "<", "<gv", opts)
-keymap("v", ">", ">gv", opts)
-
--- Move text up and down
-keymap("v", "<leader>,", ":m .+1<CR>==", opts)
-keymap("v", "<leader>.", ":m .-2<CR>==", opts)
-keymap("v", "p", '"_dP', opts)
+-- Visual: move text up/down, paste without yanking replaced text
+vim.keymap.set("v", "<leader>,", ":m .+1<CR>==", opts)
+vim.keymap.set("v", "<leader>.", ":m .-2<CR>==", opts)
+vim.keymap.set("v", "p", '"_dP', opts)

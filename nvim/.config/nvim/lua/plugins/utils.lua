@@ -1,6 +1,5 @@
 return {
-	"nvim-lua/popup.nvim",
-	"nvim-lua/plenary.nvim",
+  "nvim-lua/plenary.nvim",
   "danro/rename.vim",
   "godlygeek/tabular",
   "vim-scripts/HTML-AutoCloseTag",
