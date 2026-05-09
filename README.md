@@ -37,6 +37,8 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
 Then launch tmux and press `prefix + I` (`Ctrl-a I`) to install configured plugins.
 
+After stowing the `nvim` package, launch `nvim` once — [lazy.nvim](https://github.com/folke/lazy.nvim) bootstraps itself on first run and installs every plugin pinned in `lazy-lock.json`. To update those pins later, run `:Lazy sync` and commit the resulting `lazy-lock.json` change.
+
 After stowing the `git` package, create `~/.config/git/config.local` with your identity. This file is intentionally **not** version-controlled — it holds the per-machine private bits that the public config `[include]`s:
 
 ```ini
