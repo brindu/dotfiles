@@ -46,3 +46,11 @@ vim.api.nvim_create_autocmd("BufWritePre", {
     vim.fn.winrestview(view)
   end,
 })
+
+-- Lazy.nvim disables cursorline in its view — re-enable it for highlight feedback
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "lazy",
+  callback = function()
+    vim.opt_local.cursorline = true
+  end,
+})
