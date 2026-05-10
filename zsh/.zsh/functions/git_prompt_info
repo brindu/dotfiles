@@ -1,6 +1,10 @@
 git_prompt_info() {
-  local ref=$(git symbolic-ref HEAD 2> /dev/null)
-  if [[ -n $ref ]]; then
-    echo "[%{$fg_bold[green]%}${ref#refs/heads/}%{$reset_color%}]"
+  local ref=$(git symbolic-ref --short HEAD 2>/dev/null) || return
+  local status_glyph
+  if [[ -z $(git status --porcelain 2>/dev/null) ]]; then
+    status_glyph=" %F{#9ece6a}%f"
+  else
+    status_glyph=" %F{#e0af68}%f"
   fi
+  echo " %F{#bb9af7}%f %F{#7dcfff}${ref}%f${status_glyph}"
 }

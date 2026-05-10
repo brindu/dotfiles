@@ -1,6 +1,0 @@
-mise_prompt_info() {
-  local ruby_ver=$(mise current ruby 2>/dev/null)
-  if [[ -n $ruby_ver ]]; then
-    echo "[%{$fg_bold[red]%}${ruby_ver}%{$reset_color%}]"
-  fi
-}
