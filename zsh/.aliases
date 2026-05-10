@@ -5,7 +5,6 @@ alias l='ls -la'
 alias ll='ls -l'
 alias lh='ls -Alh'
 alias v="vim"
-alias lv="/Users/brindu/.local/bin/lvim"
 alias tree="tree -LAC 3"
 
 # Postgres
@@ -15,16 +14,10 @@ alias psql="psql -d postgres"
 alias b="bundle"
 alias be="bundle exec"
 
-# Rubygems
-alias gi="gem install"
-alias giv="gem install -v"
-
-# Rails
-alias m="migrate"
+# Rails / RSpec
 alias rk="rake"
 alias rs="b exec ./bin/rspec"
 alias test-reset="RAILS_ENV=test rails db:environment:set db:setup"
-alias sr="spring rspec"
 alias rp="be rake parallel:spec"
 
 # Shame
@@ -32,7 +25,7 @@ alias shame="ag -i '(TODO|FIXME|XXX)'"
 alias SHAME="ag -i '((TODO|FIXME|XXX) ){3}'"
 
 # git
-alias gdiff="git difftool -y -x 'colordiff -y -W $COLUMNS'"
+alias gdiff='git difftool -y -x "colordiff -y -W $COLUMNS"'
 
 fliptable() { echo "（╯°□°）╯ ┻━┻"; }
 
