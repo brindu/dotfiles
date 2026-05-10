@@ -17,7 +17,7 @@ setopt hist_verify
 setopt share_history
 
 # ─── Editor / keybindings ────────────────────────────────────────
-export VISUAL=vim
+export VISUAL=nvim
 export EDITOR=$VISUAL
 bindkey "^R" history-incremental-search-backward
 

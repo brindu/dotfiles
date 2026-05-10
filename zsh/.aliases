@@ -4,7 +4,7 @@ alias mkdir='mkdir -p'
 alias l='ls -la'
 alias ll='ls -l'
 alias lh='ls -Alh'
-alias v="vim"
+alias v="nvim"
 alias tree="tree -LAC 3"
 
 # Postgres
