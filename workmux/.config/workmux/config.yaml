@@ -1,1 +1,6 @@
 nerdfont: true
+
+sidebar:
+  width: 40
+  layout: tiles
+
