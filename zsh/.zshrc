@@ -51,7 +51,7 @@ done
 
 # ─── Prompt ──────────────────────────────────────────────────────
 # Tokyo Night accents. Prompt char is red as root or after failure, magenta otherwise.
-PROMPT='$(ssh_prompt_info)%F{#7aa2f7} %~%f$(git_prompt_info) %(!.%F{#f7768e}.%(?.%F{#bb9af7}.%F{#f7768e}))❯%f '
+PROMPT='$(ssh_prompt_info)%F{#7aa2f7} $(pwd_prompt_info)%f$(git_prompt_info) %(!.%F{#f7768e}.%(?.%F{#bb9af7}.%F{#f7768e}))❯%f '
 RPROMPT=''
 
 # ─── Tool hooks ──────────────────────────────────────────────────

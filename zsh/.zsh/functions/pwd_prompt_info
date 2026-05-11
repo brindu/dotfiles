@@ -1,0 +1,13 @@
+pwd_prompt_info() {
+  local common git
+  common=$(git rev-parse --git-common-dir 2>/dev/null) || { echo '%~'; return; }
+  git=$(git rev-parse --git-dir 2>/dev/null)
+  if [[ "$common" == "$git" ]]; then
+    echo '%~'
+    return
+  fi
+  [[ "$common" = /* ]] || common="$PWD/$common"
+  local main_root=${common:A:h}
+  local worktree_glyph=$'\U000F0257'
+  echo "${main_root/#$HOME/~} %F{#e0af68}${worktree_glyph}%f"
+}
