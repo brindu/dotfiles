@@ -43,5 +43,30 @@
 	cancel = reset "HEAD^"
 	report-csv = "log --format='\"%cd\",\"%cn\",\"%s\"' --date=short --no-merges"
 
+[color "diff"]
+	meta = "#7aa2f7"
+	frag = "#7dcfff"
+	old = "#f7768e"
+	new = "#9ece6a"
+	commit = "#e0af68"
+
+[color "status"]
+	branch = "#7dcfff"
+	added = "#9ece6a"
+	changed = "#e0af68"
+	untracked = "#f7768e"
+
+[color "branch"]
+	current = "#9ece6a bold"
+	local = "#c0caf5"
+	remote = "#ff9e64"
+	plain = "#565f89"
+
+[color "decorate"]
+	branch = "#7dcfff"
+	remoteBranch = "#ff9e64"
+	tag = "#e0af68"
+	HEAD = "#bb9af7"
+
 [include]
 	path = ~/.config/git/config.local
