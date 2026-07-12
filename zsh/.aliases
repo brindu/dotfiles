@@ -36,3 +36,7 @@ alias cw="claude --worktree"
 alias cc="claude --continue"
 alias cr="claude --resume"
 alias wm="workmux"
+alias wa="workmux add"
+
+# Heroku
+alias hr="heroku run"
