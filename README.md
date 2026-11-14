@@ -10,6 +10,7 @@ Each top-level directory is a stow *package* whose internal structure mirrors `$
 dotfiles/
 ├── README.md
 ├── CLAUDE.md
+├── setup.sh            # new-machine bootstrap (not a package)
 └── zsh/
     └── .zshrc          # → ~/.zshrc
 ```
@@ -23,29 +24,28 @@ A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the packag
 No Homebrew. Every tool comes from [mise](https://mise.jdx.dev): the `mise` package (`~/.config/mise/config.toml`) declares every CLI the other packages depend on, plus the databases, `claude` and `codex`.
 
 ```sh
-# 1. Compiler toolchain + git (stow build, redis build, nvim-treesitter)
-xcode-select --install
-
-# 2. mise → ~/.local/bin/mise (the path .zshrc activates).
-#    Needs mise ≥ 2026.11: older versions compile Ruby (linking Homebrew's OpenSSL)
-#    and leave conda's build-path placeholders in Postgres (broken time zones).
-curl https://mise.run | sh
-
-# 3. Repo (HTTPS: a fresh machine has no SSH key yet)
+# HTTPS: a fresh machine has no SSH key yet. On a fresh Mac, this first `git`
+# opens the Xcode Command Line Tools installer; let it finish, then run it again.
 git clone https://github.com/brindu/dotfiles.git ~/dotfiles
-
-# 4. stow → ~/.local/bin/stow  (see "Installing stow" below)
-
-# 5. Link packages (move aside any default ~/.zshrc first)
-cd ~/dotfiles && ~/.local/bin/stow */
-
-# 6. Install every tool, then open a new shell
-~/.local/bin/mise install
+~/dotfiles/setup.sh
 ```
 
-Then: Nerd Font, databases, git identity, tmux plugins, nvim (sections below).
+`setup.sh` runs these steps; each one skips itself when already done, so re-running is safe:
 
-If a target file already exists in `$HOME`, stow refuses to overwrite. Either move it aside, or run `stow --adopt <package>` to pull it into the repo at the matching path.
+1. Check the Xcode Command Line Tools (git, make, clang).
+2. Install mise to `~/.local/bin/mise`, and update it to ≥ 2026.11 (older versions compile Ruby against Homebrew's OpenSSL and break the conda Postgres time zones).
+3. Install **Claude Code**, early on purpose: if a later step fails, the error message prints how to start it (`mise x claude@latest -- claude`) so it can help.
+4. Build GNU stow into `~/.local` (see "Installing stow").
+5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
+6. `mise install` every tool in the mise config.
+7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
+8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH/GPG keys, terminal font, tmux/nvim plugins.
+
+Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
+
+The sections below describe each step for doing it by hand.
+
+If a target file already exists in `$HOME`, stow refuses to overwrite. `setup.sh` moves it aside first; by hand, either move it aside or run `stow --adopt <package>` to pull it into the repo at the matching path.
 
 ### Installing stow
 

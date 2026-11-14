@@ -5,7 +5,9 @@ This repo manages dotfiles via **GNU Stow**. Every top-level non-hidden director
 ## Conventions
 
 - `dotfiles/<pkg>/foo/.bar` symlinks to `~/foo/.bar` after `stow <pkg>`.
-- Repo root holds only metadata: `README.md`, `CLAUDE.md`, `.gitignore`. Everything else lives inside a package directory.
+- Repo root holds only metadata and the bootstrap: `README.md`, `CLAUDE.md`, `.gitignore`, `setup.sh`. Everything else lives inside a package directory. Never add a top-level *directory* that is not a package — `setup.sh` and `stow */` link every one into `$HOME`.
+- `setup.sh` must stay idempotent (each step skips itself when done), bash 3.2 compatible (macOS `/bin/bash`), and Homebrew-free. When adding a tool or a manual step, update `setup.sh` and the README "Setup on a new machine" section together.
+- When the user reports a failed `setup.sh` run, read `~/.local/state/dotfiles-setup.log` first.
 - `.claude/` is local Claude Code state and is gitignored — never commit it.
 - Identity, secrets, and machine-specific values go in `*.local` files outside the repo (see "Private data" below).
 
