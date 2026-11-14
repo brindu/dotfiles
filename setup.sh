@@ -179,11 +179,10 @@ finish() {
     2. Git identity:                create ~/.config/git/config.local (see README)
     3. Log in:                      claude, gh auth login, heroku login, codex login
     4. SSH key for GitHub, GPG key: see README
-    5. Terminal font:               select "Hack Nerd Font Mono"
-    6. tmux plugins:                start tmux, press Ctrl-a I
-    7. nvim plugins:                start nvim once (lazy.nvim installs them)
-    8. workmux skills for Claude:   workmux setup --skills  (needs a terminal)
-    9. Start databases when needed:
+    5. tmux plugins:                start tmux, press Ctrl-a I
+    6. nvim plugins:                start nvim once (lazy.nvim installs them)
+    7. workmux skills and hooks:    workmux setup  (Claude + Codex; needs a terminal)
+    8. Start databases when needed:
          pg_ctl -l "\$PGDATA/server.log" start
          redis-server --daemonize yes --dir ~/.local/share/redis
 EOF

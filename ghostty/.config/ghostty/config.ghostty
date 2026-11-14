@@ -1,0 +1,6 @@
+shell-integration-features = no-cursor
+cursor-style = block
+cursor-style-blink = false
+
+# Nerd Font: nvim icons and workmux (nerdfont: true) need it. setup.sh installs it.
+font-family = "Hack Nerd Font Mono"

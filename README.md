@@ -39,7 +39,7 @@ git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
 6. `mise install` every tool in the mise config.
 7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
-8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH/GPG keys, terminal font, tmux/nvim plugins.
+8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH/GPG keys, tmux/nvim plugins, `workmux setup`.
 
 Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
 
@@ -73,7 +73,7 @@ unzip -o Hack.zip '*.ttf' -d ~/Library/Fonts
 rm -rf /tmp/hack-nf
 ```
 
-Then select **Hack Nerd Font Mono** as the font in the terminal app's settings, and restart the terminal.
+The `ghostty` package (`~/.config/ghostty/config.ghostty`) sets **Hack Nerd Font Mono** as the font. In another terminal app, select it in the app's settings and restart the terminal.
 
 ### Databases
 
@@ -133,7 +133,7 @@ Two rules keep private data out of this public repo:
 - **`settings.json` is a copy, not a symlink.** Claude Code writes to it (approved permissions with project paths, UI state). Edit the live file freely; when a setting should reach other machines, add it to `settings.template.json` by hand, without machine paths (use `~`).
 - **The package is stowed with `--no-folding`.** Directories under `~/.claude` stay real and hold per-file symlinks, so if the package later gains a `skills/` or `commands/` directory, tools that install into it (e.g. `workmux setup --skills`) still do not write into the repo.
 
-Not in the package, by design: `workmux setup --skills` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
+Not in the package, by design: `workmux setup` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`) and its status hooks for Claude Code and Codex (`~/.codex/hooks.json`, plus `[features] hooks = true` in `~/.codex/config.toml`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
 
 By hand: `stow --no-folding claude`.
 
