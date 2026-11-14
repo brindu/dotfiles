@@ -29,6 +29,7 @@ python = "latest"
 node = "lts"
 "npm:yarn" = "1"       # Yarn classic for projects with yarn.lock (Rewardful)
 uv = "latest"
+rust = "stable"        # via rustup (~/.rustup, ~/.cargo)
 
 # ─── Shell & editor (referenced by tracked configs) ──────────────
 neovim = "latest"      # nvim package
