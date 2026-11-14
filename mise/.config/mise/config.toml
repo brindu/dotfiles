@@ -56,6 +56,7 @@ redis = "latest"       # compiles from source; needs only Xcode CLT
 
 # ─── Dev CLIs ────────────────────────────────────────────────────
 gh = "latest"
+jq = "latest"          # claude statusline.sh + branch-guard hook
 heroku = "latest"
 "github:raine/workmux" = "latest" # tmux bindings + .zshrc completions
 glow = "latest"        # terminal Markdown viewer
