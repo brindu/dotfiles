@@ -59,6 +59,7 @@ gh = "latest"
 heroku = "latest"
 "github:raine/workmux" = "latest" # tmux bindings + .zshrc completions
 glow = "latest"        # terminal Markdown viewer
+lazygit = "latest"
 
 # ─── AI assistants ───────────────────────────────────────────────
 claude = "latest"
