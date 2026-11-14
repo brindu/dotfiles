@@ -24,14 +24,16 @@ bindkey "^R" history-incremental-search-backward
 # ─── Aliases ─────────────────────────────────────────────────────
 [[ -r "$HOME/.aliases" ]] && source "$HOME/.aliases"
 
-# ─── Homebrew & PATH ─────────────────────────────────────────────
-eval "$(/opt/homebrew/bin/brew shellenv)"
+# ─── PATH ────────────────────────────────────────────────────────
+# Homebrew is optional: only for what mise cannot install. Load it if present.
+[[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
 export QLTY_INSTALL="$HOME/.qlty"
-export PATH="/opt/homebrew/opt/postgresql@18/bin:$HOME/.local/bin:$QLTY_INSTALL/bin:$PATH"
+export PATH="$HOME/.local/bin:$QLTY_INSTALL/bin:$PATH"
 
 # ─── Misc env ────────────────────────────────────────────────────
 export GPG_TTY=$(tty)
-export SSL_CERT_FILE=/opt/homebrew/etc/ca-certificates/cert.pem
+# CA bundle for OpenSSL-based tools (Ruby, Python, …). macOS ships and updates it.
+export SSL_CERT_FILE=/etc/ssl/cert.pem
 
 # ─── Completion (full rebuild at most once per day) ──────────────
 autoload -Uz compinit
@@ -55,6 +57,7 @@ PROMPT='$(ssh_prompt_info)%F{#7aa2f7} $(pwd_prompt_info)%f$(git_prompt_info) 
 RPROMPT=''
 
 # ─── Tool hooks ──────────────────────────────────────────────────
-eval "$(direnv hook zsh)"
-eval "$(~/.local/bin/mise activate zsh)"
-eval "$(workmux completions zsh)"
+# mise first: direnv and workmux are mise-installed and must be on PATH.
+[[ -x ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate zsh)"
+(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
+(( $+commands[workmux] )) && eval "$(workmux completions zsh)"

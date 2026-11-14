@@ -5,7 +5,7 @@ alias l='ls -la'
 alias ll='ls -l'
 alias lh='ls -Alh'
 alias v="nvim"
-alias tree="tree -LAC 3"
+alias tree="eza --tree --level=3"
 
 # Postgres
 alias psql="psql -d postgres"
@@ -21,11 +21,11 @@ alias test-reset="RAILS_ENV=test rails db:environment:set db:setup"
 alias rp="be rake parallel:spec"
 
 # Shame
-alias shame="ag -i '(TODO|FIXME|XXX)'"
-alias SHAME="ag -i '((TODO|FIXME|XXX) ){3}'"
+alias shame="rg -i '(TODO|FIXME|XXX)'"
+alias SHAME="rg -i '((TODO|FIXME|XXX) ){3}'"
 
 # git
-alias gdiff='git difftool -y -x "colordiff -y -W $COLUMNS"'
+alias gdiff='git -c pager.diff="delta --side-by-side" diff'
 
 fliptable() { echo "（╯°□°）╯ ┻━┻"; }
 
