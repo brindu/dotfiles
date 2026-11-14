@@ -17,6 +17,10 @@ DISABLE_AUTOUPDATER = "1"
 # Postgres data lives outside the mise install dir so `mise up`/`mise prune`
 # never deletes it. One dir per major version (data dirs are not portable across majors).
 PGDATA = "{{env.HOME}}/.local/share/postgres/18"
+# ruby-vips loads libvips by name through the ffi gem (>= 1.17), which searches
+# LD_LIBRARY_PATH before /opt/homebrew/lib. macOS dyld ignores this variable and
+# SIP does not strip it (unlike DYLD_*), so it reaches only ffi, even via /usr/bin/env.
+LD_LIBRARY_PATH = "{{env.HOME}}/.local/share/mise/installs/conda-libvips/latest/lib"
 
 [tools]
 # ─── Languages ───────────────────────────────────────────────────
@@ -44,10 +48,15 @@ eza = "latest"         # `tree` alias
 "conda:postgresql" = "18"
 redis = "latest"       # compiles from source; needs only Xcode CLT
 
+# ─── Image processing (Rails Active Storage variants) ────────────
+"conda:imagemagick" = "latest" # mini_magick (Rewardful) runs `magick` from PATH
+"conda:libvips" = "latest"     # ruby-vips (Rails 7+ default variant processor)
+
 # ─── Dev CLIs ────────────────────────────────────────────────────
 gh = "latest"
 heroku = "latest"
 "github:raine/workmux" = "latest" # tmux bindings + .zshrc completions
+glow = "latest"        # terminal Markdown viewer
 
 # ─── AI assistants ───────────────────────────────────────────────
 claude = "latest"

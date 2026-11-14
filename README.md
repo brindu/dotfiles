@@ -102,6 +102,17 @@ redis-server --daemonize yes --dir ~/.local/share/redis
 redis-cli shutdown
 ```
 
+### Image processing
+
+Rails Active Storage variants need an image library. Both come prebuilt from conda:
+
+| Tool | Used by | How Ruby finds it |
+| --- | --- | --- |
+| `conda:imagemagick` | `mini_magick` (e.g. `variant_processor = :mini_magick`) | Runs `magick` from `PATH` |
+| `conda:libvips` | `ruby-vips` (Rails 7+ default variant processor) | `ffi` searches `LD_LIBRARY_PATH`, which the mise config points at libvips |
+
+`LD_LIBRARY_PATH` is safe on macOS: dyld ignores it, so it affects only the `ffi` gem, and SIP does not strip it (unlike `DYLD_*`), so it survives `#!/usr/bin/env ruby` binstubs. It needs `ffi` ≥ 1.17.0 in the project's `Gemfile.lock`; older versions only look in `/opt/homebrew/lib`.
+
 ### TLS certificates
 
 `.zshrc` sets `SSL_CERT_FILE=/etc/ssl/cert.pem`. macOS ships that CA bundle and updates it with the OS, so OpenSSL-based tools (mise Ruby, Python, gems, pip) verify TLS without the Homebrew `ca-certificates` formula.
