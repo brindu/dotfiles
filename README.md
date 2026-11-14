@@ -20,14 +20,91 @@ A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the packag
 
 ## Setup on a new machine
 
+No Homebrew. Every tool comes from [mise](https://mise.jdx.dev): the `mise` package (`~/.config/mise/config.toml`) declares every CLI the other packages depend on, plus the databases, `claude` and `codex`.
+
 ```sh
-brew install stow
-git clone git@github.com:brindu/dotfiles.git ~/dotfiles
-cd ~/dotfiles
-stow */
+# 1. Compiler toolchain + git (stow build, redis build, nvim-treesitter)
+xcode-select --install
+
+# 2. mise → ~/.local/bin/mise (the path .zshrc activates)
+curl https://mise.run | sh
+
+# 3. Repo (HTTPS: a fresh machine has no SSH key yet)
+git clone https://github.com/brindu/dotfiles.git ~/dotfiles
+
+# 4. stow → ~/.local/bin/stow  (see "Installing stow" below)
+
+# 5. Link packages (move aside any default ~/.zshrc first)
+cd ~/dotfiles && ~/.local/bin/stow */
+
+# 6. Install every tool, then open a new shell
+~/.local/bin/mise install
 ```
 
+Then: Nerd Font, databases, git identity, tmux plugins, nvim (sections below).
+
 If a target file already exists in `$HOME`, stow refuses to overwrite. Either move it aside, or run `stow --adopt <package>` to pull it into the repo at the matching path.
+
+### Installing stow
+
+GNU stow is not in the mise registry. It is a Perl script, so build it from the GNU source with the system Perl (`/usr/bin/perl`) and `make` from the Xcode Command Line Tools:
+
+```sh
+mkdir -p /tmp/stow && cd /tmp/stow
+curl -fsSL https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz | tar xz --strip-components=1
+./configure --prefix="$HOME/.local"
+make install
+~/.local/bin/stow --version
+rm -rf /tmp/stow
+```
+
+`~/.local/bin` is already on `PATH` via `.zshrc`. To upgrade, run the same steps again.
+
+### Installing the Nerd Font
+
+nvim (devicons, lualine, bufferline) and workmux (`nerdfont: true`) need a Nerd Font. This setup uses **Hack Nerd Font**:
+
+```sh
+mkdir -p /tmp/hack-nf && cd /tmp/hack-nf
+curl -fsSLO https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
+unzip -o Hack.zip '*.ttf' -d ~/Library/Fonts
+rm -rf /tmp/hack-nf
+```
+
+Then select **Hack Nerd Font Mono** as the font in the terminal app's settings, and restart the terminal.
+
+### Databases
+
+Both come from mise and start by hand (no `brew services`).
+
+**Postgres 18** uses the conda backend (`conda:postgresql`): a prebuilt binary that ships its own OpenSSL and ICU, so it needs no Homebrew libraries. The conda backend is experimental, hence `experimental = true` in the mise config. mise sets `PGDATA=~/.local/share/postgres/18`, outside the mise install dir, so upgrades never delete data.
+
+```sh
+# Once per machine (and once per new major version)
+initdb --encoding=UTF8   # uses $PGDATA; superuser = your macOS user, like Homebrew
+
+# Start / stop
+pg_ctl -l "$PGDATA/server.log" start
+pg_ctl stop
+```
+
+The socket lives in `/tmp` (the libpq default), so Rails `database.yml` files without a `host` connect as before.
+
+**Redis** compiles from source on `mise install` (needs only the Xcode CLT):
+
+```sh
+mkdir -p ~/.local/share/redis
+redis-server --daemonize yes --dir ~/.local/share/redis
+redis-cli shutdown
+```
+
+### TLS certificates
+
+`.zshrc` sets `SSL_CERT_FILE=/etc/ssl/cert.pem`. macOS ships that CA bundle and updates it with the OS, so OpenSSL-based tools (mise Ruby, Python, gems, pip) verify TLS without the Homebrew `ca-certificates` formula.
+
+### Upgrades
+
+Upgrade tools with `mise up`. Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
 
 After stowing the `tmux` package, install [TPM](https://github.com/tmux-plugins/tpm):
 
