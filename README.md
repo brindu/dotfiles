@@ -26,7 +26,9 @@ No Homebrew. Every tool comes from [mise](https://mise.jdx.dev): the `mise` pack
 # 1. Compiler toolchain + git (stow build, redis build, nvim-treesitter)
 xcode-select --install
 
-# 2. mise → ~/.local/bin/mise (the path .zshrc activates)
+# 2. mise → ~/.local/bin/mise (the path .zshrc activates).
+#    Needs mise ≥ 2026.11: older versions compile Ruby (linking Homebrew's OpenSSL)
+#    and leave conda's build-path placeholders in Postgres (broken time zones).
 curl https://mise.run | sh
 
 # 3. Repo (HTTPS: a fresh machine has no SSH key yet)
@@ -78,6 +80,8 @@ Then select **Hack Nerd Font Mono** as the font in the terminal app's settings, 
 Both come from mise and start by hand (no `brew services`).
 
 **Postgres 18** uses the conda backend (`conda:postgresql`): a prebuilt binary that ships its own OpenSSL and ICU, so it needs no Homebrew libraries. The conda backend is experimental, hence `experimental = true` in the mise config. mise sets `PGDATA=~/.local/share/postgres/18`, outside the mise install dir, so upgrades never delete data.
+
+If Rails fails with `invalid value for parameter "TimeZone": "UTC"`, the binary still points at conda's build-machine zoneinfo path (installed by an old mise). Check with `strings "$(mise where conda:postgresql)/bin/postgres" | grep -m1 zoneinfo`; if it is not under `~/.local/share/mise`, run `pg_ctl stop`, `mise self-update`, `mise uninstall conda:postgresql && mise install`, then start again.
 
 ```sh
 # Once per machine (and once per new major version)

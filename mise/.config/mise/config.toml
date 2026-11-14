@@ -5,6 +5,11 @@ experimental = true
 [settings.python]
 precompiled_flavor = "install_only"
 
+[settings.ruby]
+# Use only the prebuilt jdx/ruby binaries. Fail instead of compiling from
+# source, which would silently link against whatever OpenSSL it finds (e.g. Homebrew's).
+compile = false
+
 [env]
 # Claude Code is installed by mise (below). Stop its built-in updater from
 # dropping a second, native copy into ~/.local/bin. Upgrade with `mise up claude`.
