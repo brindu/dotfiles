@@ -31,7 +31,6 @@ fliptable() { echo "（╯°□°）╯ ┻━┻"; }
 
 # AI assistants
 alias codex='codex --model gpt-6.1-sol -c model_reasoning_effort=high'
-alias a="aider --no-auto-commits"
 alias c="claude"
 alias cw="claude --worktree"
 alias cc="claude --continue"

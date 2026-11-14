@@ -27,8 +27,7 @@ bindkey "^R" history-incremental-search-backward
 # ─── PATH ────────────────────────────────────────────────────────
 # Homebrew is optional: only for what mise cannot install. Load it if present.
 [[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-export QLTY_INSTALL="$HOME/.qlty"
-export PATH="$HOME/.local/bin:$QLTY_INSTALL/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # ─── Misc env ────────────────────────────────────────────────────
 export GPG_TTY=$(tty)
@@ -47,9 +46,6 @@ fi
 for fn in ~/.zsh/functions/*(N); do
   source "$fn"
 done
-
-[[ -r "/opt/homebrew/share/zsh/site-functions/_qlty" ]] && \
-  source "/opt/homebrew/share/zsh/site-functions/_qlty"
 
 # ─── Prompt ──────────────────────────────────────────────────────
 # Tokyo Night accents. Prompt char is red as root or after failure, magenta otherwise.
