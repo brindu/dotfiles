@@ -27,6 +27,7 @@ LD_LIBRARY_PATH = "{{env.HOME}}/.local/share/mise/installs/conda-libvips/latest/
 ruby = "3.3.6"
 python = "latest"
 node = "lts"
+"npm:yarn" = "1"       # Yarn classic for projects with yarn.lock (Rewardful)
 uv = "latest"
 
 # ─── Shell & editor (referenced by tracked configs) ──────────────
