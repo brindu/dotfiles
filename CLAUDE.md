@@ -25,6 +25,9 @@ When working in this repo:
 3. **Never write a `*.local` file containing the user's real PII yourself.** Provide a template with placeholders and let the user populate it (they can copy from a `*.bak` of the file you're replacing). Their identity belongs in their hands, not in tool output.
 4. **When verifying a private value resolves**, use plain `git config <key>` — not `git config --global <key>`. The `--global` scope does **not** follow `[include]` directives and gives false negatives.
 
+5. **`claude/.claude/settings.template.json`** is the public seed for `~/.claude/settings.json`. Never copy the live `settings.json` over it: the live file collects approved permissions with project paths, commit hashes and client names. Add entries to the template one by one, with `~` instead of `/Users/<name>`.
+6. **Stow the `claude` package with `--no-folding`** (`setup.sh` does this). Folding would make `~/.claude/skills` a symlink into the repo, and installers would write into it.
+
 Existing private companions (don't commit, don't recreate):
 - `~/.config/git/config.local` — `[user]`, `[commit].gpgsign`, `[github].user`, `[ghi].token`
 

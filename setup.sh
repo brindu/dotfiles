@@ -106,18 +106,34 @@ backup_conflicts() {
       mv "$target" "$BACKUP_DIR/$rel"
       info "moved existing ~/$rel to $BACKUP_DIR/"
     fi
-  done < <(cd "$pkg_dir" && find . \( -type f -o -type l \) ! -name .DS_Store | sed 's|^\./||')
+  done < <(cd "$pkg_dir" && find . \( -type f -o -type l \) \
+    ! -name .DS_Store ! -name .stow-local-ignore ! -name settings.template.json | sed 's|^\./||')
 }
 
 link_packages() {
   step "Link packages into \$HOME (stow)"
-  local pkg_dir pkg
+  local pkg_dir pkg folding
   for pkg_dir in "$DOTFILES"/*/; do
     pkg="$(basename "$pkg_dir")"
+    # claude: link files one by one, so tools that install into ~/.claude/skills
+    # etc. (workmux setup) write real files there, not into this repo.
+    folding=""
+    if [ "$pkg" = "claude" ]; then folding="--no-folding"; fi
     backup_conflicts "$pkg_dir"
-    stow --dir="$DOTFILES" --target="$HOME" --restow "$pkg"
+    stow --dir="$DOTFILES" --target="$HOME" --restow $folding "$pkg"
     info "$pkg"
   done
+}
+
+install_claude_settings() {
+  step "Claude Code settings"
+  local template="$DOTFILES/claude/.claude/settings.template.json"
+  if [ -e "$HOME/.claude/settings.json" ]; then
+    done_ "$HOME/.claude/settings.json exists (compare with $template)"
+    return
+  fi
+  cp "$template" "$HOME/.claude/settings.json"
+  info "copied settings.template.json to ~/.claude/settings.json"
 }
 
 install_tools() {
@@ -166,7 +182,8 @@ finish() {
     5. Terminal font:               select "Hack Nerd Font Mono"
     6. tmux plugins:                start tmux, press Ctrl-a I
     7. nvim plugins:                start nvim once (lazy.nvim installs them)
-    8. Start databases when needed:
+    8. workmux skills for Claude:   workmux setup --skills  (needs a terminal)
+    9. Start databases when needed:
          pg_ctl -l "\$PGDATA/server.log" start
          redis-server --daemonize yes --dir ~/.local/share/redis
 EOF
@@ -184,6 +201,7 @@ main() {
   install_claude
   install_stow
   link_packages
+  install_claude_settings
   install_tools
   install_tmux_plugins
   install_font

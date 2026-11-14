@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(bundle exec rspec:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(find:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp remove:*)",
+      "Bash(claude mcp:*)",
+      "Bash(npx linear-mcp-server:*)",
+      "Bash(ls:*)",
+      "Bash(rails runner:*)",
+      "Bash(grep:*)",
+      "Bash(git log:*)",
+      "Bash(mkdir:*)",
+      "Bash(gh pr view:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git add:*)",
+      "Bash(rp)",
+      "Bash(gh pr diff:*)",
+      "Bash(rails console:*)",
+      "Bash(bundle exec rails console:*)",
+      "Bash(bin/rails generate migration:*)",
+      "Bash(rspec:*)",
+      "Bash(bundle exec rubocop:*)",
+      "Bash(git remote get-url:*)",
+      "SlashCommand(/ticket:*)",
+      "Bash(bundle exec rails runner:*)",
+      "Bash(gh api:*)",
+      "Bash(jq:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh search:*)",
+      "mcp__linear-server__get_issue",
+      "mcp__linear-server__update_issue",
+      "mcp__linear-server__list_issues",
+      "Bash(git rev-parse:*)",
+      "Bash(xargs:*)",
+      "Bash(bundle install:*)",
+      "Bash(bundle exec rails routes:*)",
+      "Bash(git merge-base:*)",
+      "mcp__linear-server__create_issue",
+      "Bash(git commit:*)",
+      "Bash(rails generate migration:*)",
+      "Bash(git stash:*)",
+      "Bash(bundle show:*)",
+      "Bash(git grep:*)",
+      "mcp__plugin_context7_context7__query-docs",
+      "mcp__linear-server__list_comments",
+      "mcp__linear-server__list_teams",
+      "WebFetch(domain:github.com)",
+      "Bash(head:*)",
+      "Bash(gh issue list:*)",
+      "Bash(git push:*)",
+      "mcp__plugin_context7_context7__resolve-library-id"
+    ],
+    "deny": [],
+    "defaultMode": "default"
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "permission_prompt|elicitation_dialog",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "workmux set-window-status waiting"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "workmux set-window-status working"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/.claude/branch-guard/hook.sh"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|fork",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "workmux register-agent"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "workmux set-window-status done"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "workmux set-window-status working"
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "dual-boot@ombulabs-ai": true,
+    "rails-load-defaults@ombulabs-ai": true,
+    "rails-upgrade@ombulabs-ai": true,
+    "ruby-lsp@claude-plugins-official": true,
+    "upgrade-cleanup@ombulabs-ai": true
+  },
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    },
+    "ombulabs-ai": {
+      "source": {
+        "source": "github",
+        "repo": "ombulabs/claude-skills"
+      }
+    }
+  },
+  "alwaysThinkingEnabled": true,
+  "effortLevel": "xhigh",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipAutoPermissionPrompt": true,
+  "voiceEnabled": true,
+  "modelSettings": {
+    "claude-fable-5-1": {
+      "effortLevel": "medium"
+    },
+    "claude-opus-5": {
+      "effortLevel": "high"
+    },
+    "claude-opus-5-5": {
+      "effortLevel": "high"
+    },
+    "claude-fable-5-2": {
+      "effortLevel": "medium"
+    }
+  },
+  "skipWorkflowUsageWarning": true,
+  "theme": "dark-daltonized"
+}

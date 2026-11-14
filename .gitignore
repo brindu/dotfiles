@@ -1,4 +1,4 @@
 *.bak
 *.local
-.claude/
+/.claude/
 .DS_Store

@@ -117,6 +117,26 @@ Rails Active Storage variants need an image library. Both come prebuilt from con
 
 `.zshrc` sets `SSL_CERT_FILE=/etc/ssl/cert.pem`. macOS ships that CA bundle and updates it with the OS, so OpenSSL-based tools (mise Ruby, Python, gems, pip) verify TLS without the Homebrew `ca-certificates` formula.
 
+### Claude Code
+
+The `claude` package holds the global Claude Code setup:
+
+| File | Purpose |
+| --- | --- |
+| `~/.claude/CLAUDE.md` | Global instructions for every project |
+| `~/.claude/statusline.sh` | Status line: model, context %, git branch (needs `jq`) |
+| `~/.claude/branch-guard/hook.sh` | PreToolUse hook: blocks `git commit` on `main`/`master`/`production`/`release` (needs `jq`) |
+| `settings.template.json` | **Not linked.** `setup.sh` copies it to `~/.claude/settings.json` only when that file is missing |
+
+Two rules keep private data out of this public repo:
+
+- **`settings.json` is a copy, not a symlink.** Claude Code writes to it (approved permissions with project paths, UI state). Edit the live file freely; when a setting should reach other machines, add it to `settings.template.json` by hand, without machine paths (use `~`).
+- **The package is stowed with `--no-folding`.** Directories under `~/.claude` stay real and hold per-file symlinks, so if the package later gains a `skills/` or `commands/` directory, tools that install into it (e.g. `workmux setup --skills`) still do not write into the repo.
+
+Not in the package, by design: `workmux setup --skills` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
+
+By hand: `stow --no-folding claude`.
+
 ### Upgrades
 
 Upgrade tools with `mise up`. Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
