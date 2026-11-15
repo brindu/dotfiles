@@ -39,7 +39,7 @@ git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
 6. `mise install` every tool in the mise config.
 7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
-8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`.
+8. Print the manual steps left: install Ghostty, git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`, `mise trust` in project repos.
 
 Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
 
@@ -73,7 +73,7 @@ unzip -o Hack.zip '*.ttf' -d ~/Library/Fonts
 rm -rf /tmp/hack-nf
 ```
 
-The `ghostty` package (`~/.config/ghostty/config.ghostty`) sets **Hack Nerd Font Mono** as the font. In another terminal app, select it in the app's settings and restart the terminal.
+The `ghostty` package (`~/.config/ghostty/config.ghostty`) sets **Hack Nerd Font Mono** as the font. Ghostty itself is not in mise: install it from [ghostty.org/download](https://ghostty.org/download). Until then, run `setup.sh` from Terminal.app. In another terminal app, select it in the app's settings and restart the terminal.
 
 ### Databases
 
@@ -180,6 +180,16 @@ ssh -T git@github.com                    # check: "Hi <user>! You've successfull
 ```
 
 `gh` makes `~/.ssh/id_ed25519`. If you give the key a passphrase, run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` once so macOS keeps it.
+
+### Project mise configs
+
+Some repos declare their own tools in a tracked mise config (e.g. `mise/config.toml` or `mise.toml`). mise ignores a project config until you trust it, so after cloning such a repo run, inside it:
+
+```sh
+mise trust && mise install
+```
+
+Those tools are active only inside that repo. Do not copy them into the global config here.
 
 ## Private data and `*.local` files
 
