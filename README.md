@@ -39,7 +39,8 @@ git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
 6. `mise install` every tool in the mise config.
 7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
-8. Print the manual steps left: install Ghostty, git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`, `mise trust` in project repos.
+8. Switch the `~/dotfiles` remote from HTTPS to SSH, when `ssh git@github.com` authenticates (after `gh auth login`). It adds GitHub's host keys from `gh api meta` to `~/.ssh/known_hosts` first. Without a working key, it skips and says so.
+9. Print the manual steps left: install Ghostty, git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`, `mise trust` in project repos.
 
 Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
 
@@ -175,8 +176,15 @@ claude                                   # Claude Code asks you to log in on fir
 codex login
 heroku login
 gh auth login --git-protocol ssh --web   # offers to generate an SSH key and upload it to GitHub
-git -C ~/dotfiles remote set-url origin git@github.com:brindu/dotfiles.git
+~/dotfiles/setup.sh                      # re-run: switches ~/dotfiles to the SSH remote
+```
+
+By hand, the re-run does this:
+
+```sh
+gh api meta --jq '.ssh_keys[] | "github.com " + .' >> ~/.ssh/known_hosts
 ssh -T git@github.com                    # check: "Hi <user>! You've successfully authenticated"
+git -C ~/dotfiles remote set-url origin git@github.com:brindu/dotfiles.git
 ```
 
 `gh` makes `~/.ssh/id_ed25519`. If you give the key a passphrase, run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` once so macOS keeps it.

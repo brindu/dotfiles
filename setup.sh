@@ -171,6 +171,41 @@ init_databases() {
   mkdir -p "$HOME/.local/share/redis"
 }
 
+# True when `ssh git@github.com` authenticates. Trusts GitHub's host keys from
+# `gh api meta` (fetched over HTTPS), never from an unverified first connection.
+github_ssh_works() {
+  command -v gh >/dev/null 2>&1 || return 1
+  gh auth status >/dev/null 2>&1 || return 1
+  if ! ssh-keygen -F github.com >/dev/null 2>&1; then
+    mkdir -p -m 700 "$HOME/.ssh"
+    gh api meta --jq '.ssh_keys[] | "github.com " + .' >>"$HOME/.ssh/known_hosts"
+    info "added GitHub host keys to ~/.ssh/known_hosts"
+  fi
+  local out
+  out="$(ssh -T -o BatchMode=yes -o ConnectTimeout=10 git@github.com 2>&1 || true)"
+  case "$out" in *"successfully authenticated"*) return 0 ;; esac
+  return 1
+}
+
+# The bootstrap clone uses HTTPS (no SSH key yet). Switch to SSH once it works.
+use_ssh_remote() {
+  step "dotfiles remote over SSH"
+  local url
+  url="$(git -C "$DOTFILES" remote get-url origin)"
+  case "$url" in
+    git@github.com:*) done_ "$url"; return ;;
+    https://github.com/*) ;;
+    *) info "origin is $url, not changed"; return ;;
+  esac
+  if ! github_ssh_works; then
+    info "no working GitHub SSH key yet: do 'gh auth login' (see README), then re-run setup.sh"
+    return
+  fi
+  url="git@github.com:${url#https://github.com/}"
+  git -C "$DOTFILES" remote set-url origin "$url"
+  info "origin is now $url"
+}
+
 finish() {
   step "Done. Manual steps left"
   if [ -d "$BACKUP_DIR" ]; then info "Replaced files were moved to $BACKUP_DIR"; fi
@@ -179,7 +214,8 @@ finish() {
     2. Open a new shell:            exec zsh
     3. Git identity:                create ~/.config/git/config.local (see README)
     4. Log in:                      claude, gh auth login, heroku login, codex login
-    5. SSH key for GitHub:          see README ("Logins and SSH key")
+    5. SSH key for GitHub:          see README ("Logins and SSH key"), then re-run
+                                    setup.sh to switch ~/dotfiles to the SSH remote
     6. tmux plugins:                start tmux, press Ctrl-a I
     7. nvim plugins:                start nvim once (lazy.nvim installs them)
     8. workmux skills and hooks:    workmux setup  (Claude + Codex; needs a terminal)
@@ -207,6 +243,7 @@ main() {
   install_tmux_plugins
   install_font
   init_databases
+  use_ssh_remote
   finish
 }
 
