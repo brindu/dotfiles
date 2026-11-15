@@ -1,3 +1,10 @@
+-- Disable remote-plugin providers. No installed plugin uses them, and each
+-- one adds startup cost and a :checkhealth warning. Remove a line to re-enable.
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_python3_provider = 0
+vim.g.loaded_ruby_provider = 0
+
 -- :help options for full documentation
 vim.opt.clipboard = "unnamedplus" -- allows neovim to access the system clipboard
 vim.opt.cmdheight = 2             -- more space in the command line for messages
