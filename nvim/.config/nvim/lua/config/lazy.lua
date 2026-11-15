@@ -13,4 +13,7 @@ end
 vim.opt.rtp:prepend(lazypath)
 
 -- load plugins
-require("lazy").setup("plugins")
+-- No plugin needs luarocks. Turning rocks off removes the hererocks health error.
+require("lazy").setup("plugins", {
+	rocks = { enabled = false },
+})
