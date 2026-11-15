@@ -39,7 +39,7 @@ git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
 6. `mise install` every tool in the mise config.
 7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
-8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH/GPG keys, tmux/nvim plugins, `workmux setup`.
+8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`.
 
 Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
 
@@ -157,10 +157,6 @@ After stowing the `git` package, create `~/.config/git/config.local` with your i
 [user]
 	name = Your Name
 	email = you@example.com
-	signingkey = ABCD1234           # optional, only if you GPG-sign commits
-
-[commit]
-	gpgsign = true                   # optional, requires signingkey above
 
 [github]
 	user = your-github-username      # optional, used by some tools
@@ -168,16 +164,33 @@ After stowing the `git` package, create `~/.config/git/config.local` with your i
 
 Git is non-fatal about missing includes, so commits without identity will fail with a clear `Please tell me who you are` — the local file is the fix.
 
+Commits are **not signed**: no GPG, no SSH signing. Do not put `signingkey` or `gpgsign` in `config.local`.
+
+### Logins and SSH key
+
+Run these once per machine, after `exec zsh`:
+
+```sh
+claude                                   # Claude Code asks you to log in on first start
+codex login
+heroku login
+gh auth login --git-protocol ssh --web   # offers to generate an SSH key and upload it to GitHub
+git -C ~/dotfiles remote set-url origin git@github.com:brindu/dotfiles.git
+ssh -T git@github.com                    # check: "Hi <user>! You've successfully authenticated"
+```
+
+`gh` makes `~/.ssh/id_ed25519`. If you give the key a passphrase, run `ssh-add --apple-use-keychain ~/.ssh/id_ed25519` once so macOS keeps it.
+
 ## Private data and `*.local` files
 
-Anything machine-specific or identity-bound — your name, email, GPG key ID, keychain helper commands, API tokens, work-only hostnames — should **not** be committed. The convention here is to layer those in via a sibling `*.local` file that the public config `[include]`s (or sources) at runtime.
+Anything machine-specific or identity-bound — your name, email, keychain helper commands, API tokens, work-only hostnames — should **not** be committed. The convention here is to layer those in via a sibling `*.local` file that the public config `[include]`s (or sources) at runtime.
 
 The `git` package is the working example:
 
 | File | Status | What's in it |
 | --- | --- | --- |
 | `git/.config/git/config` | Tracked, public | Settings safe to publish + a final `[include] path = ~/.config/git/config.local` |
-| `~/.config/git/config.local` | **Not tracked** (per-machine) | `[user]`, `[commit].gpgsign`, `[github].user`, etc. |
+| `~/.config/git/config.local` | **Not tracked** (per-machine) | `[user]`, `[github].user`, etc. |
 
 Most config formats support some equivalent:
 

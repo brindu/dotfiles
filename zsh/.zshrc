@@ -30,7 +30,6 @@ bindkey "^R" history-incremental-search-backward
 export PATH="$HOME/.local/bin:$PATH"
 
 # ─── Misc env ────────────────────────────────────────────────────
-export GPG_TTY=$(tty)
 # CA bundle for OpenSSL-based tools (Ruby, Python, …). macOS ships and updates it.
 export SSL_CERT_FILE=/etc/ssl/cert.pem
 

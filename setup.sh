@@ -178,7 +178,7 @@ finish() {
     1. Open a new shell:            exec zsh
     2. Git identity:                create ~/.config/git/config.local (see README)
     3. Log in:                      claude, gh auth login, heroku login, codex login
-    4. SSH key for GitHub, GPG key: see README
+    4. SSH key for GitHub:          see README ("Logins and SSH key")
     5. tmux plugins:                start tmux, press Ctrl-a I
     6. nvim plugins:                start nvim once (lazy.nvim installs them)
     7. workmux skills and hooks:    workmux setup  (Claude + Codex; needs a terminal)

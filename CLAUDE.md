@@ -13,7 +13,7 @@ This repo manages dotfiles via **GNU Stow**. Every top-level non-hidden director
 
 ## Private data
 
-Anything that shouldn't be public — `[user]` identity (name/email/signing key), API tokens, keychain helper commands, work-only hostnames, personal aliases the user has flagged as private — never lands in a tracked package file. Pattern:
+Anything that shouldn't be public — `[user]` identity (name/email), API tokens, keychain helper commands, work-only hostnames, personal aliases the user has flagged as private — never lands in a tracked package file. Pattern:
 
 - Tracked package file holds public settings **plus** an `[include]`/`source`/`Include` directive pointing at a sibling `*.local` file (e.g. `~/.config/git/config.local`)
 - The `*.local` file lives outside the repo, is created per-machine by the user, and is gitignored defensively at the repo root
@@ -29,7 +29,7 @@ When working in this repo:
 6. **Stow the `claude` package with `--no-folding`** (`setup.sh` does this). Folding would make `~/.claude/skills` a symlink into the repo, and installers would write into it.
 
 Existing private companions (don't commit, don't recreate):
-- `~/.config/git/config.local` — `[user]`, `[commit].gpgsign`, `[github].user`, `[ghi].token`
+- `~/.config/git/config.local` — `[user]`, `[github].user`, `[ghi].token` (commits are not signed)
 
 ## Operations
 
