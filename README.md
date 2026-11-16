@@ -144,6 +144,8 @@ Two rules keep private data out of this public repo:
 
 Not in the package, by design: `workmux setup` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`) and its status hooks for Claude Code and Codex (`~/.codex/hooks.json`, plus `[features] hooks = true` in `~/.codex/config.toml`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
 
+`workmux setup` installs hooks only for the agents it finds, by their config directory. Run it after `codex login`, which creates `~/.codex/`. If you install Codex or log in to it after `workmux setup` has run, run `workmux setup --hooks` again and restart the Codex agents that are running. Without these hooks, Codex status icons do not change in the workmux dashboard or sidebar.
+
 By hand: `stow --no-folding claude`.
 
 ### Upgrades
