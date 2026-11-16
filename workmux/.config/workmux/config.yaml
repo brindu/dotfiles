@@ -1,5 +1,10 @@
 nerdfont: true
 
+# Force dark: auto-detect queries the terminal bg, which a tmux popup can mask.
+theme:
+  scheme: default
+  mode: dark
+
 sidebar:
   width: 40
   layout: tiles
