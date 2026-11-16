@@ -29,7 +29,7 @@ When working in this repo:
 6. **Stow the `claude` package with `--no-folding`** (`setup.sh` does this). Folding would make `~/.claude/skills` a symlink into the repo, and installers would write into it.
 
 Existing private companions (don't commit, don't recreate):
-- `~/.config/git/config.local` — `[user]`, `[github].user`, `[ghi].token` (commits are not signed)
+- `~/.config/git/config.local` — `[user]`, `[github].user` (commits are not signed)
 
 ## Operations
 
