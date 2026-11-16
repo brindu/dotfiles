@@ -114,6 +114,12 @@ Rails Active Storage variants need an image library. Both come prebuilt from con
 
 `LD_LIBRARY_PATH` is safe on macOS: dyld ignores it, so it affects only the `ffi` gem, and SIP does not strip it (unlike `DYLD_*`), so it survives `#!/usr/bin/env ruby` binstubs. It needs `ffi` ≥ 1.17.0 in the project's `Gemfile.lock`; older versions only look in `/opt/homebrew/lib`.
 
+### Browser for system specs
+
+Rails system specs that use Ferrum/Cuprite need Chrome. mise installs **Chrome for Testing** (`http:chrome-for-testing`, mac-arm64 only) and sets `BROWSER_PATH` to its binary, because on macOS Ferrum ignores `PATH` and looks only in `/Applications`.
+
+The version is pinned once, in `[vars] chrome_version`. It is part of both the download URL and `BROWSER_PATH`, so `latest` cannot work. To upgrade, pick a version from [the Chrome for Testing dashboard](https://googlechromelabs.github.io/chrome-for-testing/), change `chrome_version`, and run `mise install`.
+
 ### TLS certificates
 
 `.zshrc` sets `SSL_CERT_FILE=/etc/ssl/cert.pem`. macOS ships that CA bundle and updates it with the OS, so OpenSSL-based tools (mise Ruby, Python, gems, pip) verify TLS without the Homebrew `ca-certificates` formula.
@@ -140,7 +146,7 @@ By hand: `stow --no-folding claude`.
 
 ### Upgrades
 
-Upgrade tools with `mise up`. Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
+Upgrade tools with `mise up`. It does not upgrade Chrome for Testing, which is pinned (see above). Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
 
 After stowing the `tmux` package, install [TPM](https://github.com/tmux-plugins/tpm):
 

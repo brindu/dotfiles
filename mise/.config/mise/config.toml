@@ -10,6 +10,11 @@ precompiled_flavor = "install_only"
 # source, which would silently link against whatever OpenSSL it finds (e.g. Homebrew's).
 compile = false
 
+[vars]
+# Chrome for Testing (see the tool at the end). The version is in the download URL
+# and in BROWSER_PATH, so "latest" cannot work: bump it here by hand.
+chrome_version = "157.0.8103.78"
+
 [env]
 # Claude Code is installed by mise (below). Stop its built-in updater from
 # dropping a second, native copy into ~/.local/bin. Upgrade with `mise up claude`.
@@ -21,6 +26,9 @@ PGDATA = "{{env.HOME}}/.local/share/postgres/18"
 # LD_LIBRARY_PATH before /opt/homebrew/lib. macOS dyld ignores this variable and
 # SIP does not strip it (unlike DYLD_*), so it reaches only ffi, even via /usr/bin/env.
 LD_LIBRARY_PATH = "{{env.HOME}}/.local/share/mise/installs/conda-libvips/latest/lib"
+# Ferrum/Cuprite (Rails system specs) ignore PATH on macOS: they look only in
+# /Applications. Point them at the mise-installed Chrome for Testing.
+BROWSER_PATH = "{{env.HOME}}/.local/share/mise/installs/http-chrome-for-testing/{{vars.chrome_version}}/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
 
 [tools]
 # ─── Languages ───────────────────────────────────────────────────
@@ -65,3 +73,10 @@ lazygit = "latest"
 # ─── AI assistants ───────────────────────────────────────────────
 claude = "latest"
 codex = "latest"
+
+# ─── Browser for system specs (Ferrum/Cuprite) ───────────────────
+# Version pinned in [vars]. mac-arm64 only.
+[tools."http:chrome-for-testing"]
+version = "{{vars.chrome_version}}"
+url = "https://storage.googleapis.com/chrome-for-testing-public/{{version}}/mac-arm64/chrome-mac-arm64.zip"
+bin_path = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS"
