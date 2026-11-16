@@ -53,13 +53,23 @@ Each prompt must contain:
 
 ```
 When the work is done and verified, commit it on this branch.
-Do not merge, push, or open a PR. Do not run `workmux add`, do not use the
-delegate, worktree, or coordinator skills, and do not create more worktrees.
-End with a short summary: what changed, how you verified it, open questions.
+You may push this branch and open a PR from it (draft unless told
+otherwise), and fix CI on it. Push only this branch. Do not push to the
+base branch, do not force-push, and do not merge any branch or PR.
+Do not run `workmux add`, do not use the delegate, worktree, or coordinator
+skills, and do not create more worktrees.
+End with a short summary: what changed, how you verified it, open questions,
+and the PR URL if you opened one.
 ```
 
-If the user names a skill for the task (e.g. `/plan-feature`), tell the
-agent to use it. Do not write the implementation steps yourself.
+If the user names a skill for the task (e.g. `/plan-feature`,
+`/implement-ticket`), tell the agent to use it for the full pipeline,
+including its push, PR, and CI stages. Do not split the pipeline between the
+agent and this session. Do not write the implementation steps yourself.
+
+Open a PR only when the task asks for one (the user, or the named skill).
+Otherwise the agent stops after the commit, and the branch comes back here
+for merge.
 
 Do NOT explore the codebase to write a better prompt. Use the context you
 already have. If the context is not sufficient to state the goal, ask the
@@ -82,8 +92,8 @@ workmux add auth-refresh -b -P "$dir/auth-refresh.md"
 workmux add billing-tests -b -P "$dir/billing-tests.md"
 ```
 
-- Handle: 2-4 words, kebab-case. The handle must NOT contain `main`
-  (the branch-guard hook blocks commits on any branch whose name has it).
+- Handle: 2-4 words, kebab-case. The handle must NOT be `main`, `master`,
+  `production`, or `release` (the branch-guard hook blocks commits on them).
 - Always pass `-b`, so the user's tmux focus stays here.
 - `--fork` copies this conversation into the agent. Use it only when the
   context is too large to write down; the "Finish rules" stay mandatory.
@@ -130,16 +140,21 @@ git diff "$base...auth-refresh"
 ```
 
 Run the verification command in the worktree: `cd "$(workmux path auth-refresh)"`.
+If the agent opened a PR, also check it: `gh pr view auth-refresh` and
+`gh pr checks auth-refresh`.
 If the result is wrong, send the agent a correction with `workmux send`;
 do not fix it in this checkout.
 
 ## 7. Hand back
 
 Report to the user, per handle: what changed, how it was verified, open
-questions. Merge and removal change the user's branches. Run them only when
-the user says so:
+questions, and the PR URL if there is one. Merge and removal change the
+user's branches. Run them only when the user says so:
 
 ```bash
-workmux merge auth-refresh --rebase   # merge into base, remove worktree
-workmux rm auth-refresh               # discard without merging
+workmux merge auth-refresh --rebase   # no PR: merge into base, remove worktree
+workmux rm auth-refresh               # PR merged on GitHub, or discard
 ```
+
+When a PR exists, do not run `workmux merge`. The PR merges on GitHub; after
+that, `workmux rm` removes the worktree.
