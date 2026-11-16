@@ -61,6 +61,7 @@ redis = "latest"       # compiles from source; needs only Xcode CLT
 # ─── Image processing (Rails Active Storage variants) ────────────
 "conda:imagemagick" = "latest" # mini_magick (Rewardful) runs `magick` from PATH
 "conda:libvips" = "latest"     # ruby-vips (Rails 7+ default variant processor)
+"conda:poppler" = "latest"     # pdfinfo: active_storage_validations PDF checks (Rewardful); pdftoppm: Rails PDF previews
 
 # ─── Dev CLIs ────────────────────────────────────────────────────
 gh = "latest"
