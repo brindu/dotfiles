@@ -134,12 +134,13 @@ The `claude` package holds the global Claude Code setup:
 | `~/.claude/CLAUDE.md` | Global instructions for every project |
 | `~/.claude/statusline.sh` | Status line: model, context %, git branch (needs `jq`) |
 | `~/.claude/branch-guard/hook.sh` | PreToolUse hook: blocks `git commit` on `main`/`master`/`production`/`release` (needs `jq`) |
+| `~/.claude/skills/delegate/` | Skill: send file-changing subagent work to workmux worktree agents; keep the Agent tool for read-only work (needs `workmux`, tmux) |
 | `settings.template.json` | **Not linked.** `setup.sh` copies it to `~/.claude/settings.json` only when that file is missing |
 
 Two rules keep private data out of this public repo:
 
 - **`settings.json` is a copy, not a symlink.** Claude Code writes to it (approved permissions with project paths, UI state). Edit the live file freely; when a setting should reach other machines, add it to `settings.template.json` by hand, without machine paths (use `~`).
-- **The package is stowed with `--no-folding`.** Directories under `~/.claude` stay real and hold per-file symlinks, so if the package later gains a `skills/` or `commands/` directory, tools that install into it (e.g. `workmux setup --skills`) still do not write into the repo.
+- **The package is stowed with `--no-folding`.** Directories under `~/.claude` stay real and hold per-file symlinks, so tools that install into `~/.claude/skills/` (e.g. `workmux setup --skills`) write real files there, not into the repo. Only `skills/delegate/SKILL.md` is a symlink.
 
 Not in the package, by design: `workmux setup` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`) and its status hooks for Claude Code and Codex (`~/.codex/hooks.json`, plus `[features] hooks = true` in `~/.codex/config.toml`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
 
