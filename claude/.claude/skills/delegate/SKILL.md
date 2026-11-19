@@ -19,6 +19,7 @@ the Agent tool.
 | Changes files (feature, fix, refactor, tests, migration) | workmux |
 | Several independent changes at once | workmux, one worktree per task |
 | Long task (more than a few minutes) | workmux |
+| Implement a ticket, spec, or bug fix end to end, in a repo with a `dev` agent | workmux, session started as `dev` (section 4) |
 | Search, read, explore, answer a question | Agent tool (`Explore` / `general-purpose`) |
 | Review a diff, second opinion | Agent tool |
 | A handful of tool calls | Do it yourself |
@@ -67,6 +68,9 @@ If the user names a skill for the task (e.g. `/plan-feature`,
 including its push, PR, and CI stages. Do not split the pipeline between the
 agent and this session. Do not write the implementation steps yourself.
 
+A `dev` agent (section 4) brings its own pipeline. Do not name a skill for
+it. Give it the ticket ID and the base branch for the PR.
+
 Open a PR only when the task asks for one (the user, or the named skill).
 Otherwise the agent stops after the commit, and the branch comes back here
 for merge.
@@ -98,6 +102,34 @@ workmux add billing-tests -b -P "$dir/billing-tests.md"
 - `--fork` copies this conversation into the agent. Use it only when the
   context is too large to write down; the "Finish rules" stay mandatory.
 
+### Ticket work in a repo with a `dev` agent
+
+Some repos define a `dev` agent that owns a ticket from reading it to a
+draft PR. When the task is a ticket, spec, or bug fix to implement end to
+end, check that the new worktree will have the agent. It has it when the
+agent is committed on the branch the worktree starts from (`HEAD`, or the
+`--base` ref), or when the main checkout holds it as a local file that
+`.workmux.yaml` symlinks into each worktree:
+
+```bash
+main=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+git cat-file -e HEAD:.claude/agents/dev.md 2>/dev/null && echo committed
+[ -e "$main/.claude/agents/dev.md" ] && echo local
+```
+
+If one line prints, start the session as that agent with `-a`:
+
+```bash
+workmux add eng-1234-payout-filter -b -a "claude --agent dev" -P "$dir/eng-1234.md"
+```
+
+If only `local` prints, the agent is not on any branch. Add
+`--base <PR base branch>` when the current branch is not the PR base, so the
+ticket branch does not carry commits from the current branch.
+
+If the check fails, or the task is not ticket implementation (a refactor
+step, a test file, a migration), spawn without `-a`.
+
 Confirm each agent started:
 
 ```bash
@@ -108,17 +140,28 @@ Then tell the user the handles, and that `Ctrl-a w` shows the dashboard.
 
 ## 5. Monitor
 
-Run the wait with `run_in_background: true`, so this session stays free and
-gets a notification when it exits:
+Do NOT use `workmux wait` to detect the end of the work. Status `done` means
+only that the agent's turn ended. An agent that started background subagents
+(the `dev` agent's reviewers and verifier) goes `done` while they run, then
+resumes. `workmux status --json` does not show subagents; the pane footer
+does.
+
+Run the poll script with `run_in_background: true`, so this session stays
+free and gets a notification when it exits:
 
 ```bash
-workmux wait auth-refresh billing-tests --timeout 3600
+~/.claude/skills/delegate/scripts/wait-done.sh auth-refresh billing-tests
 ```
 
-Exit codes: 0 all done, 1 timeout, 2 worktree not found, 3 agent exited.
+It polls every 20 s and exits when all agents stay idle for 3 polls.
+`--timeout SECONDS` changes the limit (default 3600).
+
+Exit codes: 0 all done and no subagent running, 1 timeout, 2 usage error or
+`workmux`/`jq` missing, 3 an agent needs input (`waiting`) or its worktree is
+gone.
 
 An agent in status `waiting` needs input (a question, or a permission
-prompt). `wait` does not return for it. On timeout, or when the user asks:
+prompt). On exit 3, on timeout, or when the user asks:
 
 ```bash
 workmux status auth-refresh billing-tests
