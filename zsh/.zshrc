@@ -25,9 +25,9 @@ bindkey "^R" history-incremental-search-backward
 [[ -r "$HOME/.aliases" ]] && source "$HOME/.aliases"
 
 # ─── PATH ────────────────────────────────────────────────────────
-# Homebrew is optional: only for what mise cannot install. Load it if present.
-[[ -x /opt/homebrew/bin/brew ]] && eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="$HOME/.local/bin:$PATH"
+# /opt/homebrew holds the formulae from [bootstrap.packages] in the mise config.
+# mise installs them without the `brew` program and does not set PATH.
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 
 # ─── Misc env ────────────────────────────────────────────────────
 # CA bundle for OpenSSL-based tools (Ruby, Python, …). macOS ships and updates it.
@@ -52,7 +52,7 @@ PROMPT='$(ssh_prompt_info)%F{#7aa2f7} $(pwd_prompt_info)%f$(git_prompt_info) 
 RPROMPT=''
 
 # ─── Tool hooks ──────────────────────────────────────────────────
-# mise first: direnv and workmux are mise-installed and must be on PATH.
+# mise first: workmux is mise-installed and must be on PATH. mise also loads
+# per-directory environment variables ([env] in a mise.toml).
 [[ -x ~/.local/bin/mise ]] && eval "$(~/.local/bin/mise activate zsh)"
-(( $+commands[direnv] )) && eval "$(direnv hook zsh)"
 (( $+commands[workmux] )) && eval "$(workmux completions zsh)"

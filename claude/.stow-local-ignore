@@ -1,5 +1,0 @@
-# Not symlinked. setup.sh copies the template to ~/.claude/settings.json once,
-# because Claude Code writes to settings.json (approved permissions, UI state)
-# and those writes must not land in this public repo.
-\.stow-local-ignore
-settings\.template\.json
