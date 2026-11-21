@@ -1,27 +1,32 @@
 # dotfiles
 
-Personal dotfiles managed with [GNU Stow](https://www.gnu.org/software/stow/).
+Personal dotfiles and machine setup, managed with [mise](https://mise.jdx.dev): `mise bootstrap` installs the packages and tools, links the dotfiles and starts the databases.
 
 ## Layout
 
-Each top-level directory is a stow *package* whose internal structure mirrors `$HOME`:
+Each top-level directory is a *package* (a mise dotfile group) whose internal structure mirrors `$HOME`:
 
 ```
 dotfiles/
 ├── README.md
 ├── CLAUDE.md
 ├── setup.sh            # new-machine bootstrap (not a package)
+├── mise/
+│   └── .config/mise/config.toml   # → ~/.config/mise/config.toml: tools, packages, groups
 └── zsh/
     └── .zshrc          # → ~/.zshrc
 ```
 
-A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the package is stowed.
-
-`stow` defaults `--target` to the parent of its working directory, so running it from inside `~/dotfiles` automatically targets `$HOME` — no flags needed.
+A file at `dotfiles/<pkg>/path/to/file` becomes `~/path/to/file` once the package is linked. The links are symlinks into this repo, so the repo must stay at `~/dotfiles` (`settings.dotfiles.root` in the mise config).
 
 ## Setup on a new machine
 
-No Homebrew. Every tool comes from [mise](https://mise.jdx.dev): the `mise` package (`~/.config/mise/config.toml`) declares every CLI the other packages depend on, plus the databases, `claude` and `codex`.
+One file declares the machine: the `mise` package (`~/.config/mise/config.toml`). It has two parts:
+
+| Part | Applied by | Content |
+| --- | --- | --- |
+| `[tools]`, `[env]`, `[settings]` | mise, all the time | Languages and CLIs (versions per user, in `~/.local/share/mise`), global environment variables |
+| `[bootstrap.*]`, `[dotfile_groups.*]` | only `mise bootstrap` | Homebrew packages, git checkouts, dotfile links, launchd agents, hooks |
 
 ```sh
 # HTTPS: a fresh machine has no SSH key yet. On a fresh Mac, this first `git`
@@ -30,90 +35,108 @@ git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 ~/dotfiles/setup.sh
 ```
 
-`setup.sh` runs these steps; each one skips itself when already done, so re-running is safe:
+`setup.sh` only gets mise onto the machine; each step skips itself when already done, so re-running is safe:
 
-1. Check the Xcode Command Line Tools (git, make, clang).
-2. Install mise to `~/.local/bin/mise`, and update it to ≥ 2026.11 (older versions compile Ruby against Homebrew's OpenSSL and break the conda Postgres time zones).
+1. Check the Xcode Command Line Tools (git, clang).
+2. Install mise to `~/.local/bin/mise`, and update it to ≥ 2026.11.10.
 3. Install **Claude Code**, early on purpose: if a later step fails, the error message prints how to start it (`mise x claude@latest -- claude`) so it can help.
-4. Build GNU stow into `~/.local` (see "Installing stow").
-5. Link every package with stow. Existing files in the way move to `~/.dotfiles-backup/<timestamp>/` first; nothing is overwritten.
-6. `mise install` every tool in the mise config.
-7. Clone TPM, install the Hack Nerd Font, run `initdb` for Postgres, create the Redis data dir.
-8. Switch the `~/dotfiles` remote from HTTPS to SSH, when `ssh git@github.com` authenticates (after `gh auth login`). It adds GitHub's host keys from `gh api meta` to `~/.ssh/known_hosts` first. Without a working key, it skips and says so.
-9. Print the manual steps left: install Ghostty, git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`, `mise trust` in project repos.
+4. Link `~/.config/mise` to the `mise` package, so mise reads the config in this repo.
+5. Move existing files that are in the way of a dotfile link to `~/.dotfiles-backup/<timestamp>/`. mise never replaces a real file with a link, and nothing is overwritten.
+6. Run `mise bootstrap --yes`. It asks for the sudo password one time, to create `/opt/homebrew`.
+7. Switch the `~/dotfiles` remote from HTTPS to SSH, when `ssh git@github.com` authenticates (after `gh auth login`). It adds GitHub's host keys from `gh api meta` to `~/.ssh/known_hosts` first. Without a working key, it skips and says so.
+8. Print the manual steps left: git identity, logins (`claude`, `gh auth login`, `heroku login`, `codex login`), SSH key, tmux/nvim plugins, `workmux setup`, `mise trust` in project repos.
 
 Output also goes to `~/.local/state/dotfiles-setup.log`. On failure, fix the cause (or ask Claude, pointing it at the log) and run `~/dotfiles/setup.sh` again.
 
-The sections below describe each step for doing it by hand.
+### What `mise bootstrap` does
 
-If a target file already exists in `$HOME`, stow refuses to overwrite. `setup.sh` moves it aside first; by hand, either move it aside or run `stow --adopt <package>` to pull it into the repo at the matching path.
+In this order (see `mise bootstrap --help`). Each part skips what already matches; preview with `mise bootstrap --dry-run`, compare with `mise bootstrap status`.
 
-### Installing stow
+| Part | Config | Result |
+| --- | --- | --- |
+| Packages | `[bootstrap.packages]` | Homebrew formulae and casks (see below) |
+| Hook | `[bootstrap.hooks.post-packages]` | `initdb` for Postgres (only when the cluster is missing), Redis data dir |
+| Repos | `[bootstrap.repos]` | [TPM](https://github.com/tmux-plugins/tpm) in `~/.tmux/plugins/tpm` |
+| Dotfiles | `[dotfile_groups.*]` | Symlinks for every package |
+| Hook | `[bootstrap.hooks.post-dotfiles]` | Copies `settings.template.json` to `~/.claude/settings.json` when that file is missing |
+| LaunchAgents | `[bootstrap.macos.launchd.agents.*]` | Postgres and Redis, started now and at each login |
+| Tools | `[tools]` | `mise install` |
+| Hook | `[bootstrap.hooks.post-tools]` | gh extensions: [`gh-stack`](https://github.com/github/gh-stack) (stacked PRs, `gh stack`) |
 
-GNU stow is not in the mise registry. It is a Perl script, so build it from the GNU source with the system Perl (`/usr/bin/perl`) and `make` from the Xcode Command Line Tools:
+### Homebrew packages, without Homebrew
+
+mise downloads Homebrew formulae and casks itself and installs them into `/opt/homebrew`. The `brew` program is not installed and not needed. The rule in this repo:
+
+- **`[tools]`** for languages and CLIs: versions per user, no sudo, pins possible.
+- **`[bootstrap.packages]`** for servers, shared libraries, apps and fonts:
+
+| Package | Used by |
+| --- | --- |
+| `brew:postgresql@18` | Rails projects. Keg-only (see Databases) |
+| `brew:redis` | Rails projects (Sidekiq, cache) |
+| `brew:imagemagick` | `mini_magick` (e.g. `variant_processor = :mini_magick`) runs `magick` from `PATH` |
+| `brew:vips` | `ruby-vips` (Rails 7+ default variant processor): the `ffi` gem finds it in `/opt/homebrew/lib` |
+| `brew:poppler` | `active_storage_validations` (`processable_file` on PDFs) runs `pdfinfo`; the Rails PDF previewer runs `pdftoppm` |
+| `brew-cask:ghostty` | Terminal app, in `/Applications`. It updates itself; mise installs it one time |
+| `brew-cask:font-hack-nerd-font` | **Hack Nerd Font**, in `~/Library/Fonts`: nvim (devicons, lualine, bufferline), workmux (`nerdfont: true`) and the `ghostty` package (`Hack Nerd Font Mono`) need a Nerd Font |
+
+Limits to know:
+
+- Only the current version of a formula is available. A versioned name (`postgresql@18`) pins the major version.
+- mise does not put `/opt/homebrew/bin` on `PATH`: `.zshrc` does.
+- Removing an entry from the config does not uninstall it. Run `mise bootstrap packages prune --dry-run`, then without `--dry-run`.
+- `ruby.compile = false` stays in the mise config, so Ruby itself is always the prebuilt binary and never links against `/opt/homebrew`. Gems with native extensions (e.g. `pg`) do link against it.
 
 ```sh
-mkdir -p /tmp/stow && cd /tmp/stow
-curl -fsSL https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz | tar xz --strip-components=1
-./configure --prefix="$HOME/.local"
-make install
-~/.local/bin/stow --version
-rm -rf /tmp/stow
+mise bootstrap packages status
+mise bootstrap packages use -g brew:<formula>   # add an entry and install it
+mise bootstrap packages upgrade
 ```
 
-`~/.local/bin` is already on `PATH` via `.zshrc`. To upgrade, run the same steps again.
-
-### Installing the Nerd Font
-
-nvim (devicons, lualine, bufferline) and workmux (`nerdfont: true`) need a Nerd Font. This setup uses **Hack Nerd Font**:
-
-```sh
-mkdir -p /tmp/hack-nf && cd /tmp/hack-nf
-curl -fsSLO https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
-unzip -o Hack.zip '*.ttf' -d ~/Library/Fonts
-rm -rf /tmp/hack-nf
-```
-
-The `ghostty` package (`~/.config/ghostty/config.ghostty`) sets **Hack Nerd Font Mono** as the font. Ghostty itself is not in mise: install it from [ghostty.org/download](https://ghostty.org/download). Until then, run `setup.sh` from Terminal.app. In another terminal app, select it in the app's settings and restart the terminal.
+On a new machine, run `setup.sh` from Terminal.app; Ghostty is in `/Applications` when it ends.
 
 ### Databases
 
-Both come from mise and start by hand (no `brew services`).
+Postgres and Redis come from Homebrew formulae and run as LaunchAgents (`~/Library/LaunchAgents/dev.mise.postgres.plist` and `dev.mise.redis.plist`), so they start at each login. mise has no `brew services`; the agents in the mise config replace it. launchd does not see the shell `PATH` or the mise `[env]`, so the agents use absolute paths.
 
-**Postgres 18** uses the conda backend (`conda:postgresql`): a prebuilt binary that ships its own OpenSSL and ICU, so it needs no Homebrew libraries. The conda backend is experimental, hence `experimental = true` in the mise config. mise sets `PGDATA=~/.local/share/postgres/18`, outside the mise install dir, so upgrades never delete data.
-
-If Rails fails with `invalid value for parameter "TimeZone": "UTC"`, the binary still points at conda's build-machine zoneinfo path (installed by an old mise). Check with `strings "$(mise where conda:postgresql)/bin/postgres" | grep -m1 zoneinfo`; if it is not under `~/.local/share/mise`, run `pg_ctl stop`, `mise self-update`, `mise uninstall conda:postgresql && mise install`, then start again.
-
-```sh
-# Once per machine (and once per new major version)
-initdb --encoding=UTF8   # uses $PGDATA; superuser = your macOS user, like Homebrew
-
-# Start / stop
-pg_ctl -l "$PGDATA/server.log" start
-pg_ctl stop
-```
-
-The socket lives in `/tmp` (the libpq default), so Rails `database.yml` files without a `host` connect as before.
-
-**Redis** compiles from source on `mise install` (needs only the Xcode CLT):
-
-```sh
-mkdir -p ~/.local/share/redis
-redis-server --daemonize yes --dir ~/.local/share/redis
-redis-cli shutdown
-```
-
-### Image processing
-
-Rails Active Storage variants need an image library, and PDF checks and previews need Poppler. All come prebuilt from conda:
-
-| Tool | Used by | How Ruby finds it |
+| | Postgres 18 | Redis |
 | --- | --- | --- |
-| `conda:imagemagick` | `mini_magick` (e.g. `variant_processor = :mini_magick`) | Runs `magick` from `PATH` |
-| `conda:libvips` | `ruby-vips` (Rails 7+ default variant processor) | `ffi` searches `LD_LIBRARY_PATH`, which the mise config points at libvips |
-| `conda:poppler` | `active_storage_validations` (`processable_file` on PDFs), Rails PDF previewer | Runs `pdfinfo` / `pdftoppm` from `PATH` |
+| Data | `~/.local/share/postgres/18` (`PGDATA`) | `~/.local/share/redis` |
+| Log | `~/Library/Logs/postgres.log` | `~/Library/Logs/redis.log` |
+| Port | 5432, socket in `/tmp` | 6379 |
 
-`LD_LIBRARY_PATH` is safe on macOS: dyld ignores it, so it affects only the `ffi` gem, and SIP does not strip it (unlike `DYLD_*`), so it survives `#!/usr/bin/env ruby` binstubs. It needs `ffi` ≥ 1.17.0 in the project's `Gemfile.lock`; older versions only look in `/opt/homebrew/lib`.
+`postgresql@18` is *keg-only*: Homebrew does not link a versioned formula into `/opt/homebrew/bin`. The mise config adds `/opt/homebrew/opt/postgresql@18/bin` to `PATH` (`_.path` in `[env]`), so `psql`, `pg_ctl` and `pg_config` work in every shell.
+
+The cluster is made by the `post-packages` hook (`initdb --encoding=UTF8`; superuser = your macOS user). The socket lives in `/tmp` (the libpq default), so Rails `database.yml` files without a `host` connect.
+
+```sh
+mise bootstrap macos launchd status                    # loaded / unloaded / differs
+launchctl kickstart -k gui/$(id -u)/dev.mise.postgres  # restart
+launchctl bootout gui/$(id -u)/dev.mise.postgres       # stop until the next `mise bootstrap` or login
+mise bootstrap macos launchd apply                     # load again after a config change
+```
+
+For a new Postgres major version: change `postgresql@18` and the `18` data dir in the mise config (packages, `_.path`, `PGDATA`, hook, agent), then run `mise bootstrap`.
+
+### Environment variables per project
+
+mise replaces direnv. `mise activate` in `.zshrc` loads the `[env]` of every trusted mise config at or above the current directory, and unloads it when you leave:
+
+```toml
+# <project>/mise.local.toml (keep it out of git), then `mise trust`
+[env]
+DATABASE_URL = "postgres://localhost/app_dev"
+_.file = ".env"          # or load a dotenv file
+```
+
+For projects that keep a direnv-style `.envrc` you cannot change, a machine-local config above them can source it. Example `~/Work/mise.toml` (not in this repo; needs `mise trust`), with a small script that prints the nearest `.envrc` at or above the current directory:
+
+```toml
+[env]
+_.source = "{{ exec(command=config_root ~ '/.envrc-find.sh ' ~ cwd) }}"
+```
+
+The `.envrc` must hold only plain `export` lines: direnv functions (`source_env`, `layout`, `PATH_add`) do not exist there.
 
 ### Browser for system specs
 
@@ -133,36 +156,28 @@ The `claude` package holds the global Claude Code setup:
 | --- | --- |
 | `~/.claude/CLAUDE.md` | Global instructions for every project |
 | `~/.claude/statusline.sh` | Status line: model, context %, git branch (needs `jq`) |
-| `~/.claude/branch-guard/hook.sh` | PreToolUse hook: blocks `git commit` on `main`/`master`/`production`/`release` (needs `jq`) |
+| `~/.claude/branch-guard/hook.sh` | PreToolUse hook: blocks `git commit` on `main`/`master`/`production`/`release`, only in repositories below `~/Work` (`BRANCH_GUARD_SCOPE` changes this; needs `jq`) |
 | `~/.claude/skills/delegate/` | Skill: send file-changing subagent work to workmux worktree agents; keep the Agent tool for read-only work (needs `workmux`, tmux) |
 | `settings.template.json` | **Not linked.** `setup.sh` copies it to `~/.claude/settings.json` only when that file is missing |
 
 Two rules keep private data out of this public repo:
 
 - **`settings.json` is a copy, not a symlink.** Claude Code writes to it (approved permissions with project paths, UI state). Edit the live file freely; when a setting should reach other machines, add it to `settings.template.json` by hand, without machine paths (use `~`).
-- **The package is stowed with `--no-folding`.** Directories under `~/.claude` stay real and hold per-file symlinks, so tools that install into `~/.claude/skills/` (e.g. `workmux setup --skills`) write real files there, not into the repo. Only `skills/delegate/SKILL.md` is a symlink.
+- **The `claude` group links file by file.** It has no whole-directory entry, so directories under `~/.claude` stay real and hold per-file symlinks, so tools that install into `~/.claude/skills/` (e.g. `workmux setup --skills`) write real files there, not into the repo. Only `skills/delegate/SKILL.md` is a symlink.
 
 Not in the package, by design: `workmux setup` installs the workmux skills (`coordinator`, `merge`, `open-pr`, `rebase`, `worktree`, `workmux`) and its status hooks for Claude Code and Codex (`~/.codex/hooks.json`, plus `[features] hooks = true` in `~/.codex/config.toml`); Claude Code itself manages `skills/synced/`, plugins (from `enabledPlugins` + `extraKnownMarketplaces` in the settings), sessions, history and credentials.
 
 `workmux setup` installs hooks only for the agents it finds, by their config directory. Run it after `codex login`, which creates `~/.codex/`. If you install Codex or log in to it after `workmux setup` has run, run `workmux setup --hooks` again and restart the Codex agents that are running. Without these hooks, Codex status icons do not change in the workmux dashboard or sidebar.
 
-By hand: `stow --no-folding claude`.
-
 ### Upgrades
 
-Upgrade tools with `mise up`. It does not upgrade Chrome for Testing, which is pinned (see above). Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
+Upgrade tools with `mise up`, and the Homebrew packages with `mise bootstrap packages upgrade` (or both with `mise bootstrap --upgrade`). `mise up` does not upgrade Chrome for Testing, which is pinned (see above). Claude Code's own auto-updater is disabled in the mise config (`DISABLE_AUTOUPDATER`) so it does not install a second copy outside mise.
 
-After stowing the `tmux` package, install [TPM](https://github.com/tmux-plugins/tpm):
+`mise bootstrap` clones [TPM](https://github.com/tmux-plugins/tpm) into `~/.tmux/plugins/tpm`. Launch tmux and press `prefix + I` (`Ctrl-a I`) to install configured plugins.
 
-```sh
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-```
+After the `nvim` package is linked, launch `nvim` once — [lazy.nvim](https://github.com/folke/lazy.nvim) bootstraps itself on first run and installs every plugin pinned in `lazy-lock.json`. To update those pins later, run `:Lazy sync` and commit the resulting `lazy-lock.json` change.
 
-Then launch tmux and press `prefix + I` (`Ctrl-a I`) to install configured plugins.
-
-After stowing the `nvim` package, launch `nvim` once — [lazy.nvim](https://github.com/folke/lazy.nvim) bootstraps itself on first run and installs every plugin pinned in `lazy-lock.json`. To update those pins later, run `:Lazy sync` and commit the resulting `lazy-lock.json` change.
-
-After stowing the `git` package, create `~/.config/git/config.local` with your identity. This file is intentionally **not** version-controlled — it holds the per-machine private bits that the public config `[include]`s:
+After the `git` package is linked, create `~/.config/git/config.local` with your identity. This file is intentionally **not** version-controlled — it holds the per-machine private bits that the public config `[include]`s:
 
 ```ini
 [user]
@@ -227,7 +242,7 @@ Most config formats support some equivalent:
 | git | `[include] path = ~/.../something.local` |
 | ssh | `Include ~/.ssh/config.local` at the top of `~/.ssh/config` |
 | zsh | `[ -f ~/.zshrc.local ] && source ~/.zshrc.local` |
-| direnv `.envrc` | `source_env_if_exists .envrc.local` |
+| mise | `mise.local.toml` next to a `mise.toml`, or `~/.config/mise/config.local.toml` |
 | tmux | `source-file -q ~/.config/tmux/tmux.local.conf` |
 
 When you add a new package whose live config has private bits, **split the file**: keep the public scaffolding in the repo, `[include]` (or source) the `.local` companion, and document what goes in it in this README. The repo's `.gitignore` already ignores `*.local` defensively.
@@ -236,23 +251,32 @@ When you add a new package whose live config has private bits, **split the file*
 
 ## Adding a package
 
-1. Create the directory: `mkdir git`
-2. Place files at the path they should land in `$HOME` (e.g., `git/.gitconfig` → `~/.gitconfig`).
-3. `stow git`
+1. Create the directory: `mkdir foo`
+2. Place files at the path they should land in `$HOME` (e.g., `foo/.config/foo/config` → `~/.config/foo/config`).
+3. Add a group to the end of `mise/.config/mise/config.toml`:
+
+   ```toml
+   [dotfile_groups.foo]
+   root = "foo"
+   # Optional: link the whole directory, not each file. Files the application
+   # creates there then land in this repo (gitignore them, or leave this out).
+   [dotfile_groups.foo.entries]
+   "~/.config/foo" = { mode = "symlink" }
+   ```
+4. `mise dot diff`, then `mise dot apply`.
 
 ## Commands
 
-Run from inside `~/dotfiles`:
-
 | Command | Purpose |
 | --- | --- |
-| `stow <pkg>` | Symlink one package |
-| `stow -D <pkg>` | Remove a package's symlinks |
-| `stow -R <pkg>` | Recreate symlinks (run after adding files to a package) |
-| `stow */` | Symlink every package |
-| `stow --adopt <pkg>` | Pull existing `$HOME` files into `<pkg>` |
+| `mise dot status --verbose` | List every link and its state |
+| `mise dot diff` | Show what `apply` would change |
+| `mise dot apply` | Create the missing links (run after adding a file to a file-by-file group) |
+| `mise dot apply --prune` | Also remove links whose source file is gone |
+| `mise dot unapply --group <pkg>` | Remove a package's links |
+| `mise bootstrap --dry-run` | Preview the full machine setup |
 
-Editing a file inside a package edits the live config — symlinks are transparent. Restow is only needed when adding or removing files.
+Editing a file inside a package edits the live config — symlinks are transparent. A new file in a directory that is linked as a whole (`mode = "symlink"`) needs no command. `mise dot apply` never replaces a real file: move it into the package first (or use `mise dot add`).
 
 ## Tmux key bindings
 
@@ -475,7 +499,7 @@ Adapters/configurations are language-specific and not pre-wired — install the 
 
 #### Adding things
 
-- **A plugin** — drop a new file in `nvim/.config/nvim/lua/plugins/<name>.lua` returning a lazy.nvim spec, run `stow -R nvim` to symlink it, open nvim → Lazy auto-installs and bumps `lazy-lock.json`.
+- **A plugin** — drop a new file in `nvim/.config/nvim/lua/plugins/<name>.lua` returning a lazy.nvim spec, open nvim → Lazy auto-installs and bumps `lazy-lock.json`.
 - **An LSP server** — append to `ensure_installed` in `nvim/.config/nvim/lua/plugins/lsp.lua`. Restart nvim → mason fetches it. Per-server overrides go through `vim.lsp.config("server_name", { … })` in `lua/config/lsp_config.lua`.
 - **A treesitter parser** — append to `ensure_installed` in `nvim/.config/nvim/lua/plugins/tree_sitter.lua`. Restart, or `:TSInstallSync <lang>` immediately.
 

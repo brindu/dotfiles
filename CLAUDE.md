@@ -1,12 +1,14 @@
 # Repository guidance
 
-This repo manages dotfiles via **GNU Stow**. Every top-level non-hidden directory is a stow package whose internal layout mirrors `$HOME`.
+This repo sets up a Mac with **mise**: `mise bootstrap` installs packages and tools, links the dotfiles and loads the launchd agents. Every top-level non-hidden directory is a package (a mise dotfile group) whose internal layout mirrors `$HOME`. There is no GNU Stow and no `brew` program.
 
 ## Conventions
 
-- `dotfiles/<pkg>/foo/.bar` symlinks to `~/foo/.bar` after `stow <pkg>`.
-- Repo root holds only metadata and the bootstrap: `README.md`, `CLAUDE.md`, `.gitignore`, `setup.sh`. Everything else lives inside a package directory. Never add a top-level *directory* that is not a package — `setup.sh` and `stow */` link every one into `$HOME`.
-- `setup.sh` must stay idempotent (each step skips itself when done), bash 3.2 compatible (macOS `/bin/bash`), and Homebrew-free. When adding a tool or a manual step, update `setup.sh` and the README "Setup on a new machine" section together.
+- `dotfiles/<pkg>/foo/.bar` is linked to `~/foo/.bar` by the group `[dotfile_groups.<pkg>]` in `mise/.config/mise/config.toml`. The repo must be at `~/dotfiles` (`settings.dotfiles.root`).
+- Repo root holds only metadata and the bootstrap: `README.md`, `CLAUDE.md`, `.gitignore`, `setup.sh`. Everything else lives inside a package directory. A new top-level directory needs its own `[dotfile_groups.<pkg>]` table with a `root`; `setup.sh` treats every top-level directory as a package when it moves conflicting files away.
+- `mise/.config/mise/config.toml` is the one declaration of the machine. `[tools]` for languages and CLIs. `[bootstrap.packages]` (`brew:`, `brew-cask:`) only for servers, shared libraries, apps and fonts. mise applies `[bootstrap.*]` and `[dotfile_groups.*]` only on `mise bootstrap`.
+- LaunchAgents and hooks do not see the shell `PATH`, `[env]` or `[tools]`: use absolute paths, and `{{env.HOME}}` in place of a hardcoded home directory. Hooks run on each `mise bootstrap`, so each command must skip itself when done.
+- `setup.sh` must stay idempotent (each step skips itself when done) and bash 3.2 compatible (macOS `/bin/bash`). It only installs mise, links `~/.config/mise` and runs `mise bootstrap`; put new setup work in the mise config, not in the script. When adding a tool, a package or a manual step, update the mise config and the README "Setup on a new machine" section together.
 - When the user reports a failed `setup.sh` run, read `~/.local/state/dotfiles-setup.log` first.
 - `.claude/` is local Claude Code state and is gitignored — never commit it.
 - Identity, secrets, and machine-specific values go in `*.local` files outside the repo (see "Private data" below).
@@ -26,22 +28,25 @@ When working in this repo:
 4. **When verifying a private value resolves**, use plain `git config <key>` — not `git config --global <key>`. The `--global` scope does **not** follow `[include]` directives and gives false negatives.
 
 5. **`claude/.claude/settings.template.json`** is the public seed for `~/.claude/settings.json`. Never copy the live `settings.json` over it: the live file collects approved permissions with project paths, commit hashes and client names. Add entries to the template one by one, with `~` instead of `/Users/<name>`.
-6. **Stow the `claude` package with `--no-folding`** (`setup.sh` does this). Folding would make `~/.claude/skills` a symlink into the repo, and installers would write into it.
+6. **Keep the `claude` group file by file**: no `entries` path with `mode = "symlink"` under `~/.claude`. A whole-directory link would make `~/.claude/skills` a symlink into the repo, and installers would write into it.
 
 Existing private companions (don't commit, don't recreate):
 - `~/.config/git/config.local` — `[user]`, `[github].user` (commits are not signed)
 
 ## Operations
 
-Run `stow` from inside `~/dotfiles` (it defaults `--target` to the parent dir, i.e. `$HOME`).
+- Preview first: `mise dot diff` for links, `mise bootstrap --dry-run` for all parts, `mise bootstrap status` for drift.
+- New file in a file-by-file group (`claude`, `psql`, top level of `zsh`) → `mise dot apply`
+- New file in a directory linked as a whole → no command needed
+- New package directory → add `[dotfile_groups.<pkg>]`, then `mise dot apply`
+- Existing `$HOME` file to pull into a package → move it into the package, then `mise dot apply` (mise never replaces a real file with a link)
+- New Homebrew package → `mise bootstrap packages use -g brew:<formula>`
 
-- New file added to an existing package → `stow -R <pkg>`
-- New package directory created → `stow <pkg>`
-- Existing `$HOME` file to pull into a package → `stow --adopt <pkg>`
-
-Editing a file already inside a package edits the live config — no restow needed.
+Editing a file already inside a package edits the live config, including the mise config itself.
 
 ## Safety
 
-- `stow`, `stow --adopt`, and any `mv ~/.<file>` step modify the live `$HOME`. Confirm with the user before running them.
-- Before adopting or restowing, sanity-check that the live file and the package file aren't going to clobber each other unexpectedly (`diff`, or `ls -l` to see whether the live path is already a symlink).
+- `mise bootstrap`, `mise dot apply`, `mise bootstrap packages apply|prune`, `mise bootstrap macos launchd apply` and any `mv ~/.<file>` step modify the live machine. Confirm with the user before running them. The `--dry-run` forms are safe.
+- The first `mise bootstrap` on a machine needs sudo (to create `/opt/homebrew`), so the user must run it.
+- Never use `--force` or `--force-dotfiles` without the user: they replace real files and no backup is documented.
+- Postgres data is in `~/.local/share/postgres/<major>`. Do not delete it without the user.

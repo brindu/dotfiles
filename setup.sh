@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# Bootstrap a Mac from this repo. No Homebrew.
+# Bootstrap a Mac from this repo. This script only gets mise onto the machine
+# and links its config; `mise bootstrap` then does the work (packages, dotfile
+# links, launchd agents, tools). See the [bootstrap] part of
+# mise/.config/mise/config.toml.
 #
 #   git clone https://github.com/brindu/dotfiles.git ~/dotfiles
 #   ~/dotfiles/setup.sh
@@ -18,7 +21,7 @@ LOCAL_BIN="$HOME/.local/bin"
 MISE="$LOCAL_BIN/mise"
 MISE_INSTALLS="${MISE_DATA_DIR:-$HOME/.local/share/mise}/installs"
 LOG="$HOME/.local/state/dotfiles-setup.log"
-MIN_MISE="2026.11" # older: compiles Ruby against Homebrew OpenSSL, breaks conda Postgres time zones
+MIN_MISE="2026.11.10" # `mise bootstrap` with brew packages, dotfile groups and launchd agents
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
 
 export PATH="$LOCAL_BIN:$PATH"
@@ -67,7 +70,7 @@ install_mise() {
   fi
   local version
   version="$("$MISE" --version 2>/dev/null | grep -Eo '^[0-9]{4}\.[0-9]+\.[0-9]+' | head -1)"
-  if [ "$(printf '%s\n%s\n' "$MIN_MISE" "$version" | sort -t. -k1,1n -k2,2n | head -1)" != "$MIN_MISE" ]; then
+  if [ "$(printf '%s\n%s\n' "$MIN_MISE" "$version" | sort -t. -k1,1n -k2,2n -k3,3n | head -1)" != "$MIN_MISE" ]; then
     info "mise $version is older than $MIN_MISE, updating"
     "$MISE" self-update --yes
   fi
@@ -80,21 +83,10 @@ install_claude() {
   "$MISE" install claude@latest
 }
 
-install_stow() {
-  step "GNU stow (built from source with the system perl)"
-  if command -v stow >/dev/null 2>&1; then done_ "$(command -v stow)"; return; fi
-  command -v perl >/dev/null 2>&1 || stop "perl not found."
-  command -v make >/dev/null 2>&1 || stop "make not found (Xcode Command Line Tools)."
-  local tmp
-  tmp="$(mktemp -d)"
-  curl -fsSL https://ftp.gnu.org/gnu/stow/stow-latest.tar.gz | tar xz -C "$tmp" --strip-components=1
-  (cd "$tmp" && ./configure --prefix="$HOME/.local" >/dev/null && make install >/dev/null)
-  rm -rf "$tmp"
-  info "$(stow --version | head -1)"
-}
-
-# Move real files that would block stow into $BACKUP_DIR. A target that already
-# resolves to the package file (our own symlink, or inside a folded dir) is kept.
+# mise never replaces a real file with a link. Move real files that are in the
+# way into $BACKUP_DIR. A target that already resolves to the package file (our
+# own symlink, or inside a linked dir) is kept. Then remove the dirs this
+# leaves empty, so mise can link a whole directory there.
 backup_conflicts() {
   local pkg_dir="$1" rel src target
   while IFS= read -r rel; do
@@ -107,68 +99,45 @@ backup_conflicts() {
       info "moved existing ~/$rel to $BACKUP_DIR/"
     fi
   done < <(cd "$pkg_dir" && find . \( -type f -o -type l \) \
-    ! -name .DS_Store ! -name .stow-local-ignore ! -name settings.template.json | sed 's|^\./||')
+    ! -name .DS_Store ! -name settings.template.json | sed 's|^\./||')
+  while IFS= read -r rel; do
+    target="$HOME/$rel"
+    if [ -d "$target" ] && [ ! -L "$target" ]; then rmdir "$target" 2>/dev/null || true; fi
+  done < <(cd "$pkg_dir" && find . -mindepth 1 -depth -type d | sed 's|^\./||')
 }
 
-link_packages() {
-  step "Link packages into \$HOME (stow)"
-  local pkg_dir pkg folding
+# The mise config is in this repo. Link its directory first, so `mise bootstrap`
+# reads it. This is the same link that the `mise` dotfile group declares.
+link_mise_config() {
+  step "Link the mise config (~/.config/mise)"
+  local src="$DOTFILES/mise/.config/mise" target="$HOME/.config/mise"
+  if [ "$target" -ef "$src" ]; then done_ "linked"; return; fi
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    mkdir -p "$BACKUP_DIR/.config"
+    mv "$target" "$BACKUP_DIR/.config/mise"
+    info "moved existing ~/.config/mise to $BACKUP_DIR/"
+  fi
+  mkdir -p "$HOME/.config"
+  ln -s "$src" "$target"
+  info "linked $target to $src"
+}
+
+move_conflicts() {
+  step "Move files that block the dotfile links"
+  local pkg_dir
   for pkg_dir in "$DOTFILES"/*/; do
-    pkg="$(basename "$pkg_dir")"
-    # claude: link files one by one, so tools that install into ~/.claude/skills
-    # etc. (workmux setup) write real files there, not into this repo.
-    folding=""
-    if [ "$pkg" = "claude" ]; then folding="--no-folding"; fi
     backup_conflicts "$pkg_dir"
-    stow --dir="$DOTFILES" --target="$HOME" --restow $folding "$pkg"
-    info "$pkg"
   done
+  if [ -d "$BACKUP_DIR" ]; then info "see $BACKUP_DIR"; else done_ "nothing in the way"; fi
 }
 
-install_claude_settings() {
-  step "Claude Code settings"
-  local template="$DOTFILES/claude/.claude/settings.template.json"
-  if [ -e "$HOME/.claude/settings.json" ]; then
-    done_ "$HOME/.claude/settings.json exists (compare with $template)"
-    return
-  fi
-  cp "$template" "$HOME/.claude/settings.json"
-  info "copied settings.template.json to ~/.claude/settings.json"
-}
-
-install_tools() {
-  step "Tools from ~/.config/mise/config.toml"
-  (cd "$HOME" && "$MISE" install)
+# Packages (Homebrew formulae and casks, no `brew` program), git checkouts,
+# dotfile links, launchd agents for Postgres and Redis, then every tool.
+# The first run asks for the sudo password one time, to create /opt/homebrew.
+run_bootstrap() {
+  step "mise bootstrap"
+  (cd "$HOME" && "$MISE" bootstrap --yes)
   eval "$(cd "$HOME" && "$MISE" env -s bash)"
-}
-
-install_tmux_plugins() {
-  step "tmux plugin manager (TPM)"
-  if [ -d "$HOME/.tmux/plugins/tpm" ]; then done_ "installed"; return; fi
-  git clone --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-}
-
-install_font() {
-  step "Hack Nerd Font"
-  if ls "$HOME"/Library/Fonts/HackNerdFont*.ttf >/dev/null 2>&1; then done_ "installed"; return; fi
-  local tmp
-  tmp="$(mktemp -d)"
-  curl -fsSL -o "$tmp/Hack.zip" https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Hack.zip
-  mkdir -p "$HOME/Library/Fonts"
-  unzip -oq "$tmp/Hack.zip" '*.ttf' -d "$HOME/Library/Fonts"
-  rm -rf "$tmp"
-}
-
-init_databases() {
-  step "Databases (data dirs only; start them by hand)"
-  : "${PGDATA:?PGDATA is not set: check [env] in ~/.config/mise/config.toml}"
-  if [ -s "$PGDATA/PG_VERSION" ]; then
-    done_ "Postgres cluster in $PGDATA"
-  else
-    initdb --encoding=UTF8 -D "$PGDATA" >/dev/null
-    info "Postgres cluster created in $PGDATA"
-  fi
-  mkdir -p "$HOME/.local/share/redis"
 }
 
 # True when `ssh git@github.com` authenticates. Trusts GitHub's host keys from
@@ -210,19 +179,16 @@ finish() {
   step "Done. Manual steps left"
   if [ -d "$BACKUP_DIR" ]; then info "Replaced files were moved to $BACKUP_DIR"; fi
   cat <<EOF
-    1. Terminal app:                install Ghostty from https://ghostty.org/download, open it
-    2. Open a new shell:            exec zsh
-    3. Git identity:                create ~/.config/git/config.local (see README)
-    4. Log in:                      claude, gh auth login, heroku login, codex login
-    5. SSH key for GitHub:          see README ("Logins and SSH key"), then re-run
+    1. Open Ghostty (installed in /Applications), then a new shell there
+    2. Git identity:                create ~/.config/git/config.local (see README)
+    3. Log in:                      claude, gh auth login, heroku login, codex login
+    4. SSH key for GitHub:          see README ("Logins and SSH key"), then re-run
                                     setup.sh to switch ~/dotfiles to the SSH remote
-    6. tmux plugins:                start tmux, press Ctrl-a I
-    7. nvim plugins:                start nvim once (lazy.nvim installs them)
-    8. workmux skills and hooks:    workmux setup  (Claude + Codex; needs a terminal)
-    9. Project tools:               mise trust, in each cloned repo that has a mise config
-   10. Start databases when needed:
-         pg_ctl -l "\$PGDATA/server.log" start
-         redis-server --daemonize yes --dir ~/.local/share/redis
+    5. tmux plugins:                start tmux, press Ctrl-a I
+    6. nvim plugins:                start nvim once (lazy.nvim installs them)
+    7. workmux skills and hooks:    workmux setup  (Claude + Codex; needs a terminal)
+    8. Project tools:               mise trust, in each cloned repo that has a mise config
+    Postgres and Redis run now and start at each login (mise bootstrap macos launchd status).
 EOF
 }
 
@@ -236,13 +202,9 @@ main() {
   check_xcode_clt
   install_mise
   install_claude
-  install_stow
-  link_packages
-  install_claude_settings
-  install_tools
-  install_tmux_plugins
-  install_font
-  init_databases
+  link_mise_config
+  move_conflicts
+  run_bootstrap
   use_ssh_remote
   finish
 }

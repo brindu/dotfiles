@@ -1,6 +1,6 @@
-[settings]
-# Needed by the conda backend (prebuilt Postgres, see below).
-experimental = true
+[settings.dotfiles]
+# The repo that holds the dotfile groups (see [dotfile_groups] at the end).
+root = "~/dotfiles"
 
 [settings.python]
 precompiled_flavor = "install_only"
@@ -19,13 +19,12 @@ chrome_version = "157.0.8103.78"
 # Claude Code is installed by mise (below). Stop its built-in updater from
 # dropping a second, native copy into ~/.local/bin. Upgrade with `mise up claude`.
 DISABLE_AUTOUPDATER = "1"
-# Postgres data lives outside the mise install dir so `mise up`/`mise prune`
-# never deletes it. One dir per major version (data dirs are not portable across majors).
+# Postgres data dir. One dir per major version (data dirs are not portable
+# across majors). The launchd agent and the initdb hook below use the same path.
 PGDATA = "{{env.HOME}}/.local/share/postgres/18"
-# ruby-vips loads libvips by name through the ffi gem (>= 1.17), which searches
-# LD_LIBRARY_PATH before /opt/homebrew/lib. macOS dyld ignores this variable and
-# SIP does not strip it (unlike DYLD_*), so it reaches only ffi, even via /usr/bin/env.
-LD_LIBRARY_PATH = "{{env.HOME}}/.local/share/mise/installs/conda-libvips/latest/lib"
+# postgresql@18 is keg-only: Homebrew does not link it into /opt/homebrew/bin.
+# Put psql, pg_ctl and pg_config (the `pg` gem build needs it) on PATH.
+_.path = ["/opt/homebrew/opt/postgresql@18/bin"]
 # Ferrum/Cuprite (Rails system specs) ignore PATH on macOS: they look only in
 # /Applications. Point them at the mise-installed Chrome for Testing.
 BROWSER_PATH = "{{env.HOME}}/.local/share/mise/installs/http-chrome-for-testing/{{vars.chrome_version}}/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing"
@@ -42,7 +41,6 @@ rust = "stable"        # via rustup (~/.rustup, ~/.cargo)
 # ─── Shell & editor (referenced by tracked configs) ──────────────
 neovim = "latest"      # nvim package
 tmux = "latest"        # tmux package
-direnv = "latest"      # .zshrc hook
 tree-sitter = "latest" # nvim-treesitter
 ripgrep = "latest"     # telescope live_grep, `shame` alias
 fd = "latest"          # telescope find_files
@@ -52,16 +50,6 @@ shfmt = "latest"       # conform.nvim (sh)
 "npm:prettier" = "latest" # conform.nvim (js/ts/json/yaml/md/css/html)
 delta = "latest"       # `gdiff` alias
 eza = "latest"         # `tree` alias
-
-# ─── Databases ───────────────────────────────────────────────────
-# conda build: prebuilt, ships its own OpenSSL/ICU, so no Homebrew libs needed.
-"conda:postgresql" = "18"
-redis = "latest"       # compiles from source; needs only Xcode CLT
-
-# ─── Image processing (Rails Active Storage variants) ────────────
-"conda:imagemagick" = "latest" # mini_magick (Rewardful) runs `magick` from PATH
-"conda:libvips" = "latest"     # ruby-vips (Rails 7+ default variant processor)
-"conda:poppler" = "latest"     # pdfinfo: active_storage_validations PDF checks (Rewardful); pdftoppm: Rails PDF previews
 
 # ─── Dev CLIs ────────────────────────────────────────────────────
 gh = "latest"
@@ -81,3 +69,123 @@ codex = "latest"
 version = "{{vars.chrome_version}}"
 url = "https://storage.googleapis.com/chrome-for-testing-public/{{version}}/mac-arm64/chrome-mac-arm64.zip"
 bin_path = "chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS"
+
+# ═══ Machine setup: applied only by `mise bootstrap` (see setup.sh) ═══════
+
+# ─── Host packages ───────────────────────────────────────────────
+# Homebrew formulae and casks. mise downloads them itself into /opt/homebrew;
+# the `brew` program is not installed. Only the current version is available.
+# Use these for servers and shared libraries; CLIs stay in [tools].
+[bootstrap.packages]
+"brew:postgresql@18" = "latest" # keg-only, see _.path in [env]
+"brew:redis" = "latest"
+"brew:imagemagick" = "latest"   # mini_magick (Rewardful) runs `magick` from PATH
+"brew:vips" = "latest"          # ruby-vips (Rails 7+ default variant processor); ffi finds /opt/homebrew/lib
+"brew:poppler" = "latest"       # pdfinfo: active_storage_validations PDF checks (Rewardful); pdftoppm: Rails PDF previews
+"brew-cask:ghostty" = { adopt = true }             # ghostty package
+"brew-cask:font-hack-nerd-font" = { adopt = true } # ghostty font; nvim and workmux icons
+
+# ─── Hooks ───────────────────────────────────────────────────────
+# Hooks run on each `mise bootstrap`, so each command skips itself when done.
+# post-packages runs before the launchd agents load: Postgres needs its cluster.
+#
+# The three `ln` lines do a post-install step of the postgresql formula that
+# mise does not implement (it warns "skipped post-install step link_dir"):
+# Postgres looks for its share, lib and include dirs under these names.
+[bootstrap.hooks.post-packages]
+description = "Link the Postgres dirs, create the cluster and the Redis data dir"
+run = [
+  "ln -sfn /opt/homebrew/opt/postgresql@18/share/postgresql /opt/homebrew/share/postgresql@18",
+  "ln -sfn /opt/homebrew/opt/postgresql@18/lib/postgresql /opt/homebrew/lib/postgresql@18",
+  "ln -sfn /opt/homebrew/opt/postgresql@18/include/postgresql /opt/homebrew/include/postgresql@18",
+  "test -s {{env.HOME}}/.local/share/postgres/18/PG_VERSION || /opt/homebrew/opt/postgresql@18/bin/initdb --encoding=UTF8 -D {{env.HOME}}/.local/share/postgres/18",
+  "mkdir -p {{env.HOME}}/.local/share/redis",
+]
+
+# Claude Code writes to settings.json (approved permissions, UI state), so it
+# is a copy made one time, not a link into this public repo.
+[bootstrap.hooks.post-dotfiles]
+description = "Seed ~/.claude/settings.json from the template"
+run = "test -e ~/.claude/settings.json || cp ~/dotfiles/claude/.claude/settings.template.json ~/.claude/settings.json"
+
+# gh extensions. gh comes from [tools], and a hook does not see [tools]: use
+# `mise exec`. Installs without a GitHub login. Upgrade: `gh extension upgrade --all`.
+[bootstrap.hooks.post-tools]
+description = "Install the gh extensions"
+run = [
+  "mise exec -- gh extension list | grep -q 'github/gh-stack' || mise exec -- gh extension install github/gh-stack", # stacked PRs: `gh stack`
+]
+
+# ─── Git checkouts ───────────────────────────────────────────────
+[bootstrap.repos]
+"~/.tmux/plugins/tpm" = { url = "https://github.com/tmux-plugins/tpm", depth = 1 }
+
+# ─── Databases: start at login (LaunchAgents dev.mise.<name>) ────
+# launchd does not see the shell PATH, [env] or [tools]: use absolute paths.
+[bootstrap.macos.launchd.agents.postgres]
+program = "/opt/homebrew/opt/postgresql@18/bin/postgres"
+args = ["-D", "{{env.HOME}}/.local/share/postgres/18"]
+# launchd sets no locale; without one Postgres stops at startup on macOS
+# ("postmaster became multithreaded during startup").
+environment = { LC_ALL = "en_US.UTF-8" }
+run_at_load = true
+keep_alive = true
+stdout_path = "~/Library/Logs/postgres.log"
+stderr_path = "~/Library/Logs/postgres.log"
+
+[bootstrap.macos.launchd.agents.redis]
+program = "/opt/homebrew/bin/redis-server"
+args = ["--dir", "{{env.HOME}}/.local/share/redis", "--bind", "127.0.0.1", "::1"] # local connections only
+run_at_load = true
+keep_alive = true
+stdout_path = "~/Library/Logs/redis.log"
+stderr_path = "~/Library/Logs/redis.log"
+
+# ─── Dotfiles ────────────────────────────────────────────────────
+# One group per top-level directory of ~/dotfiles (settings.dotfiles.root).
+# Each directory mirrors $HOME. A group links file by file; an `entries` path
+# with mode "symlink" links that whole directory, so files an application
+# creates there (for example ~/.config/git/config.local) stay next to it.
+[dotfile_groups.claude]
+root = "claude"
+# File by file: tools that install into ~/.claude/skills write real files there.
+exclude = ["settings.template.json", ".DS_Store"]
+
+[dotfile_groups.ghostty]
+root = "ghostty"
+[dotfile_groups.ghostty.entries]
+"~/.config/ghostty" = { mode = "symlink" }
+
+[dotfile_groups.git]
+root = "git"
+[dotfile_groups.git.entries]
+"~/.config/git" = { mode = "symlink" }
+
+[dotfile_groups.mise]
+root = "mise"
+# setup.sh makes this link before the first `mise bootstrap`.
+[dotfile_groups.mise.entries]
+"~/.config/mise" = { mode = "symlink" }
+
+[dotfile_groups.nvim]
+root = "nvim"
+[dotfile_groups.nvim.entries]
+"~/.config/nvim" = { mode = "symlink" }
+
+[dotfile_groups.psql]
+root = "psql"
+
+[dotfile_groups.tmux]
+root = "tmux"
+[dotfile_groups.tmux.entries]
+"~/.config/tmux" = { mode = "symlink" }
+
+[dotfile_groups.workmux]
+root = "workmux"
+[dotfile_groups.workmux.entries]
+"~/.config/workmux" = { mode = "symlink" }
+
+[dotfile_groups.zsh]
+root = "zsh"
+[dotfile_groups.zsh.entries]
+"~/.zsh" = { mode = "symlink" }
