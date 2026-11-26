@@ -49,7 +49,11 @@ Each prompt must contain:
   verbatim. Decisions already made. Approaches already ruled out, and why.
 - **Pointers**: files and docs to read, as RELATIVE paths (each worktree
   has its own root).
-- **Scope**: what NOT to touch.
+- **Scope**: what NOT to touch. Name the data that the agent can delete
+  (databases, caches, files outside git). If you name none, write that the
+  agent deletes only test data that it made itself. Ask for a proof that the
+  agent can do inside its rules; add: "If the proof is not possible, stop
+  and report."
 - **Verification**: the test or command that proves the change works.
 - **Finish rules**, always, verbatim:
 
